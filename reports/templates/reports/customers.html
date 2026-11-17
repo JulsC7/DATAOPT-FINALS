@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Profiles</title>
+    <style>
+        table { border-collapse: collapse; width: 50%; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Module 2: Active Customer Distribution</h1>
+
+    <table>
+        <tr>
+            <th>Territory Name</th>
+            <th>Country Code</th>
+            <th>Active Customers</th>
+        </tr>
+        <!-- This loop unpacks the 'active_customers' dictionary from views.py -->
+        {% for row in active_customers %}
+        <tr>
+            <td>{{ row.TerritoryName }}</td>
+            <td>{{ row.CountryRegionCode }}</td>
+            <td>{{ row.ActiveCustomerCount }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No customer data found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
