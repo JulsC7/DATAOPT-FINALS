@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdventureWorks BI — Data Governance &amp; Analytics Workspace</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #18181b;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .bg-grid-pattern {
+      background-color: #f8fafc;
+      background-image:
+        linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+        linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .login-card-shadow {
+      box-shadow: 6px 6px 0px #18181b;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f4f4f5;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #d4d4d8;
+      border-radius: 3px;
+    }
+    /* Dark Mode Overrides */
+    body.dark-mode {
+      background-color: #09090b !important;
+      color: #f4f4f5 !important;
+    }
+    body.dark-mode .bg-grid-pattern {
+      background-color: #09090b !important;
+      background-image:
+        linear-gradient(to right, #27272a 1px, transparent 1px),
+        linear-gradient(to bottom, #27272a 1px, transparent 1px) !important;
+    }
+    body.dark-mode .login-card-shadow {
+      box-shadow: 6px 6px 0px #52525b !important;
+    }
+    body.dark-mode .bg-white {
+      background-color: #18181b !important;
+    }
+    body.dark-mode .bg-zinc-100 {
+      background-color: #09090b !important;
+    }
+    body.dark-mode .bg-zinc-50,
+    body.dark-mode .bg-zinc-200 {
+      background-color: #27272a !important;
+    }
+    body.dark-mode .border-zinc-200,
+    body.dark-mode .border-zinc-300,
+    body.dark-mode .border-zinc-100 {
+      border-color: #27272a !important;
+    }
+    body.dark-mode .border-zinc-900 {
+      border-color: #52525b !important;
+    }
+    body.dark-mode .text-zinc-900,
+    body.dark-mode .text-zinc-800 {
+      color: #f4f4f5 !important;
+    }
+    body.dark-mode .text-zinc-700,
+    body.dark-mode .text-zinc-600 {
+      color: #d4d4d8 !important;
+    }
+    body.dark-mode .text-zinc-500,
+    body.dark-mode .text-zinc-400 {
+      color: #a1a1aa !important;
+    }
+    body.dark-mode .bg-zinc-900 {
+      background-color: #f4f4f5 !important;
+      color: #18181b !important;
+    }
+    body.dark-mode .hover\:bg-zinc-50:hover,
+    body.dark-mode .hover\:bg-zinc-100:hover {
+      background-color: #27272a !important;
+    }
+    body.dark-mode .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #27272a !important;
+    }
+    body.dark-mode .text-emerald-700 {
+      color: #34d399 !important;
+    }
+    body.dark-mode .text-amber-700 {
+      color: #fbbf24 !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-zinc-100 text-zinc-900 antialiased">
+
+  <!-- ===================================================================== -->
+  <!-- SCREEN 1: LOGIN PAGE (Welcome Back)                                   -->
+  <!-- ===================================================================== -->
+  <section id="loginScreen" class="relative min-h-screen bg-grid-pattern flex flex-col items-center justify-center p-4">
+    <button id="btnThemeToggleLogin" type="button" class="theme-toggle-btn absolute top-4 right-4 px-3 py-1.5 bg-white border border-zinc-300 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 mono transition">
+      🌙 Dark Mode
+    </button>
+
+    <div class="w-full max-w-md bg-white border border-zinc-900 p-8 sm:p-10 login-card-shadow">
+      <div class="flex items-center gap-3 pb-6 border-b border-zinc-200">
+        <div class="w-9 h-9 border-2 border-zinc-900 p-1 grid grid-cols-2 gap-0.5 shrink-0">
+          <div class="bg-zinc-900"></div>
+          <div class="border border-zinc-900"></div>
+          <div class="border border-zinc-900"></div>
+          <div class="bg-zinc-900"></div>
+        </div>
+        <div>
+          <div class="text-sm font-bold tracking-tight text-zinc-900 leading-none">AdventureWorks</div>
+          <div class="text-[10px] font-medium tracking-widest text-zinc-400 uppercase mt-1 mono">BUSINESS INTELLIGENCE</div>
+        </div>
+      </div>
+
+      <div class="mt-6 mb-6">
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Welcome back</h1>
+        <p class="text-xs text-zinc-500 mt-1">Sign in to access the AdventureWorks2019 BI &amp; Data Governance Workspace.</p>
+      </div>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="loginEmail" class="block text-[11px] font-semibold uppercase tracking-wider text-zinc-700 mb-1.5 mono">EMAIL ADDRESS</label>
+          <input id="loginEmail" type="email" required value="governance@adventureworks.com"
+            class="w-full bg-white border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition" />
+        </div>
+
+        <div>
+          <label for="loginPassword" class="block text-[11px] font-semibold uppercase tracking-wider text-zinc-700 mb-1.5 mono">PASSWORD</label>
+          <input id="loginPassword" type="password" required value="••••••••"
+            class="w-full bg-white border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition" />
+        </div>
+
+        <div>
+          <label for="loginRoleSelect" class="block text-[11px] font-semibold uppercase tracking-wider text-zinc-700 mb-1.5 mono">ASSIGNED RBAC ROLE (DEMO)</label>
+          <select id="loginRoleSelect" class="w-full bg-zinc-50 border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-800 focus:outline-none focus:border-zinc-900">
+            <option value="governance" selected>Governance — Customer Profile &amp; Reports (governance@adventureworks.com)</option>
+            <option value="admin">Administrator — All 6 Pages Unlocked (admin@adventureworks.com)</option>
+            <option value="manager">Manager — All 6 Pages Read/Export (manager@adventureworks.com)</option>
+            <option value="supervisor">Supervisor — Dashboard, Customers &amp; Territories (supervisor@adventureworks.com)</option>
+            <option value="employee">Employee — Limited View Only (employee@adventureworks.com)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full mt-2 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm py-2.5 px-4 transition flex items-center justify-center gap-2">
+          <span>Log in</span>
+          <span>&rarr;</span>
+        </button>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 mono">
+        <span>DB: AdventureWorks2019 (Read-Only)</span>
+        <span>PII Masking: ON</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SCREEN 2: MAIN WORKSPACE SHELL                                        -->
+  <!-- ===================================================================== -->
+  <section id="appShell" class="hidden min-h-screen flex flex-col lg:flex-row bg-zinc-100">
+
+    <!-- LEFT SIDEBAR (Matches Wireframe Order) -->
+    <aside class="w-full lg:w-64 bg-white border-b lg:border-b-0 lg:border-r border-zinc-200 flex flex-col justify-between shrink-0">
+      <div>
+        <div class="h-16 px-5 border-b border-zinc-200 flex items-center gap-3">
+          <div class="w-8 h-8 border-2 border-zinc-900 p-1 grid grid-cols-2 gap-0.5 shrink-0">
+            <div class="bg-zinc-900"></div>
+            <div class="border border-zinc-900"></div>
+            <div class="border border-zinc-900"></div>
+            <div class="bg-zinc-900"></div>
+          </div>
+          <div>
+            <div class="text-sm font-bold tracking-tight text-zinc-900 leading-none">AdventureWorks</div>
+            <div class="text-[10px] font-medium tracking-widest text-zinc-400 uppercase mt-1 mono">BI WORKSPACE</div>
+          </div>
+        </div>
+
+        <nav class="p-3 space-y-1" id="sidebarNav">
+          <button type="button" data-module="dashboard" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold bg-zinc-900 text-white transition">
+            <span class="flex items-center gap-2.5"><span>⊞</span><span>Dashboard</span></span>
+          </button>
+
+          <button type="button" data-module="reports" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition">
+            <span class="flex items-center gap-2.5"><span>📄</span><span>Reports</span></span>
+            <span id="lock-reports" class="text-[10px] text-zinc-400 mono">✓</span>
+          </button>
+
+          <button type="button" data-module="revenue_loss" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition">
+            <span class="flex items-center gap-2.5"><span>📈</span><span>Revenue &amp; Loss</span></span>
+            <span id="lock-revenue_loss" class="text-[10px] text-zinc-400 mono">🔒</span>
+          </button>
+
+          <button type="button" data-module="products" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition">
+            <span class="flex items-center gap-2.5"><span>📦</span><span>Products</span></span>
+            <span id="lock-products" class="text-[10px] text-zinc-400 mono">🔒</span>
+          </button>
+
+          <button type="button" data-module="customers" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition">
+            <span class="flex items-center gap-2.5"><span>👥</span><span>Customers</span></span>
+            <span id="lock-customers" class="text-[10px] text-zinc-400 mono">✓</span>
+          </button>
+
+          <button type="button" data-module="territories" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition">
+            <span class="flex items-center gap-2.5"><span>📍</span><span>Sales Territories</span></span>
+            <span id="lock-territories" class="text-[10px] text-zinc-400 mono">🔒</span>
+          </button>
+
+          <div class="pt-2 mt-2 border-t border-zinc-200">
+            <button type="button" data-module="rbac_audit" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition">
+              <span class="flex items-center gap-2.5"><span>🛡️</span><span>RBAC &amp; Audit Logs</span></span>
+              <span id="auditBadgeCount" class="text-[10px] px-1.5 py-0.5 bg-zinc-200 text-zinc-700 mono">3</span>
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      <div class="p-4 border-t border-zinc-200 space-y-3">
+        <div class="border border-zinc-200 p-2.5 flex items-center gap-2.5 bg-zinc-50">
+          <div id="userAvatarInitials" class="w-8 h-8 bg-zinc-200 border border-zinc-300 flex items-center justify-center text-xs font-bold text-zinc-800 shrink-0">DG</div>
+          <div class="min-w-0">
+            <div id="userDisplayName" class="text-xs font-bold text-zinc-900 truncate">Data Governance</div>
+            <div id="userDisplayRole" class="text-[10px] uppercase tracking-wider text-zinc-500 mono truncate">GOVERNANCE</div>
+          </div>
+        </div>
+        <button id="btnLogout" type="button" class="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition">
+          <span>&#8617;</span><span>Log out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- RIGHT WORKSPACE COLUMN -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- TOP HEADER BAR -->
+      <header class="h-16 bg-white border-b border-zinc-200 px-6 flex items-center justify-between gap-4 shrink-0">
+        <div class="flex items-center gap-2 text-xs text-zinc-500 mono truncate">
+          <span class="uppercase tracking-wider">ADVENTUREWORKS BI</span>
+          <span>/</span>
+          <span id="breadcrumbCurrent" class="font-semibold text-zinc-900">Data Governance dashboard</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <select id="headerRoleSwitcher" class="hidden sm:block bg-zinc-50 border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-800 focus:outline-none focus:border-zinc-900">
+            <option value="governance">Role: Governance</option>
+            <option value="admin">Role: Administrator</option>
+            <option value="manager">Role: Manager</option>
+            <option value="supervisor">Role: Supervisor</option>
+            <option value="employee">Role: Employee</option>
+          </select>
+
+          <button id="btnThemeToggleHeader" type="button" class="theme-toggle-btn px-3 h-9 border border-zinc-300 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-800 text-xs font-semibold mono transition">
+            🌙 Dark Mode
+          </button>
+          <button id="btnHeaderSearchFocus" type="button" title="Search" class="w-9 h-9 border border-zinc-300 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-700 text-sm transition">🔍</button>
+          <button id="btnHeaderAuditBell" type="button" title="Audit Logs" class="relative w-9 h-9 border border-zinc-300 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-700 text-sm transition">
+            <span>🔔</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-zinc-900 rounded-full"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- MAIN PAGE VIEWS -->
+      <main class="flex-1 p-5 sm:p-7 space-y-6 overflow-y-auto">
+
+        <!-- =============================================================== -->
+        <!-- PAGE 1: DASHBOARD (Data Governance Overview)                    -->
+        <!-- =============================================================== -->
+        <div id="view-dashboard" class="space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="text-[11px] font-medium uppercase tracking-widest text-zinc-500 mono">DATA GOVERNANCE / OVERVIEW</div>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mt-1">Data Governance dashboard</h2>
+              <p class="text-xs sm:text-sm text-zinc-500 mt-1">Live AdventureWorks2019 view of active customer distribution, XML completeness, and PII-masked audit records.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnTestDbDelete" type="button" class="px-3.5 py-2 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-semibold mono transition">TEST READ-ONLY LOCK</button>
+              <button id="btnExportView" type="button" class="export-btn px-4 py-2 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-semibold uppercase tracking-wider mono transition">EXPORT VIEW &darr;</button>
+            </div>
+          </div>
+
+          <!-- Working Filter Bar -->
+          <div class="bg-white border border-zinc-200 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 mono">DATABASE FILTERS (UPDATES CHARTS, KPIs &amp; TABLE)</span>
+              <button id="btnResetFilters" type="button" class="text-xs font-medium text-zinc-500 hover:text-zinc-900 underline">Reset Filters</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label for="filterTerritory" class="block text-[11px] font-medium text-zinc-500 mb-1">Sales Territory</label>
+                <select id="filterTerritory" class="w-full bg-zinc-50 border border-zinc-300 px-3 py-2 text-xs text-zinc-900">
+                  <option value="ALL">All Sales Territories (10 Regions)</option>
+                  <option value="Southwest">North America — Southwest</option>
+                  <option value="Northwest">North America — Northwest</option>
+                  <option value="Australia">Pacific — Australia</option>
+                  <option value="United Kingdom">Europe — United Kingdom</option>
+                  <option value="Germany">Europe — Germany</option>
+                  <option value="France">Europe — France</option>
+                  <option value="Canada">North America — Canada</option>
+                  <option value="Southeast">North America — Southeast</option>
+                  <option value="Northeast">North America — Northeast</option>
+                  <option value="Central">North America — Central</option>
+                </select>
+              </div>
+              <div>
+                <label for="filterSegment" class="block text-[11px] font-medium text-zinc-500 mb-1">Customer Segment</label>
+                <select id="filterSegment" class="w-full bg-zinc-50 border border-zinc-300 px-3 py-2 text-xs text-zinc-900">
+                  <option value="ALL">All Segments (IN + SC)</option>
+                  <option value="IN">Individual Retail (IN)</option>
+                  <option value="SC">Commercial Store (SC)</option>
+                </select>
+              </div>
+              <div>
+                <label for="filterStatus" class="block text-[11px] font-medium text-zinc-500 mb-1">Governance Status</label>
+                <select id="filterStatus" class="w-full bg-zinc-50 border border-zinc-300 px-3 py-2 text-xs text-zinc-900">
+                  <option value="ALL">All Governance Statuses</option>
+                  <option value="Verified">Verified Clean</option>
+                  <option value="Inactive">Inactive Accounts</option>
+                  <option value="MissingXML">Incomplete XML</option>
+                  <option value="Duplicate">Duplicate IDs</option>
+                  <option value="TerritoryConflict">Territory Conflicts</option>
+                </select>
+              </div>
+              <div>
+                <label for="filterSearch" class="block text-[11px] font-medium text-zinc-500 mb-1">Search Account #</label>
+                <input id="filterSearch" type="text" placeholder="e.g. AW00011000..." class="w-full bg-zinc-50 border border-zinc-300 px-3 py-2 text-xs text-zinc-900" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">TOTAL CUSTOMER ACCOUNTS</div>
+              <div class="mt-2 flex items-baseline gap-2"><span id="kpiTotalAccounts" class="text-2xl font-bold text-zinc-900 mono">19,820</span><span class="text-xs text-zinc-500">Accounts</span></div>
+              <div class="mt-1.5 text-[11px] text-zinc-500">Source: `Sales.Customer`</div>
+            </div>
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">ACTIVE CUSTOMER RATE</div>
+              <div class="mt-2 flex items-baseline gap-2"><span id="kpiActiveRate" class="text-2xl font-bold text-emerald-700 mono">86.4%</span><span id="kpiActiveCount" class="text-xs text-zinc-500">(17,124 active)</span></div>
+              <div class="mt-1.5 text-[11px] text-zinc-500">Verified via `SalesOrderHeader`</div>
+            </div>
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">XML DEMOGRAPHIC COMPLETENESS</div>
+              <div class="mt-2 flex items-baseline gap-2"><span id="kpiXmlScore" class="text-2xl font-bold text-zinc-900 mono">91.8%</span><span class="text-xs text-zinc-500">% Populated</span></div>
+              <div class="mt-1.5 text-[11px] text-zinc-500">Parsed from `Person.Person` XML</div>
+            </div>
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">FLAGGED GOVERNANCE ISSUES</div>
+              <div class="mt-2 flex items-baseline gap-2"><span id="kpiIssues" class="text-2xl font-bold text-amber-700 mono">4,190</span><span class="text-xs text-zinc-500">Flagged Records</span></div>
+              <div class="mt-1.5 text-[11px] text-zinc-500">PII Masking: <strong class="text-emerald-700">100% Enforced</strong></div>
+            </div>
+          </div>
+
+          <!-- Charts Row 1 -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-7 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">VISUALIZATION 1 • BAR CHART</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Active vs. Inactive Customer Accounts by Sales Territory (Units: Accounts)</h3>
+              <div class="relative h-72 w-full"><canvas id="chartTerritory"></canvas></div>
+            </div>
+            <div class="lg:col-span-5 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">VISUALIZATION 2 • DOUGHNUT CHART</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Governance Anomalies Breakdown (Units: Flagged Records)</h3>
+              <div class="relative h-72 w-full"><canvas id="chartAnomalies"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Chart Row 2 -->
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">VISUALIZATION 3 • COMPLETENESS AUDIT</div>
+            <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Customer Profile &amp; XML Demographic Completeness by Attribute (Units: % Populated)</h3>
+            <div class="relative h-64 w-full"><canvas id="chartCompleteness"></canvas></div>
+          </div>
+
+          <!-- Audit Table -->
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / CUSTOMER PROFILE AUDIT</div>
+                <h3 class="text-sm font-bold text-zinc-900 mt-0.5">PII-Masked Customer Governance Records (`Sales.Customer` &bowtie; `Person.Person`)</h3>
+              </div>
+              <span id="tableCountBadge" class="text-xs mono px-2.5 py-1 bg-zinc-100 border border-zinc-200 text-zinc-700">Showing 14 records</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll border border-zinc-200">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500 mono">
+                    <th class="py-2.5 px-3">Account #</th><th class="py-2.5 px-3">Masked Name</th><th class="py-2.5 px-3">Masked Phone</th>
+                    <th class="py-2.5 px-3">Segment</th><th class="py-2.5 px-3">Territory</th><th class="py-2.5 px-3 text-right">Orders</th>
+                    <th class="py-2.5 px-3 text-right">XML Score</th><th class="py-2.5 px-3">Governance Status</th>
+                  </tr>
+                </thead>
+                <tbody id="customerTableBody" class="divide-y divide-zinc-200 mono text-[11px]"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- PAGE 2: REPORTS (Matches Wireframe: 3 KPIs + Table + Bar/List)  -->
+        <!-- =============================================================== -->
+        <div id="view-reports" class="hidden space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="text-[11px] font-medium uppercase tracking-widest text-zinc-500 mono">LIBRARY / GOVERNANCE REPORTS</div>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mt-1">Reports</h2>
+              <p class="text-xs sm:text-sm text-zinc-500 mt-1">Saved reporting views and frequently used analysis.</p>
+            </div>
+            <button type="button" class="export-btn px-4 py-2 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-semibold uppercase tracking-wider mono transition">EXPORT VIEW &darr;</button>
+          </div>
+
+          <!-- 3 KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">SAVED REPORTS</div>
+              <div class="mt-2 text-2xl font-bold text-zinc-900 mono">14</div>
+              <div class="mt-1 text-[11px] text-zinc-500">Across 4 AdventureWorks modules</div>
+            </div>
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">SCHEDULED EXPORTS</div>
+              <div class="mt-2 text-2xl font-bold text-zinc-900 mono">6</div>
+              <div class="mt-1 text-[11px] text-zinc-500">Weekly automated governance digests</div>
+            </div>
+            <div class="bg-white border border-zinc-200 p-5">
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mono">REPORTS VIEWED</div>
+              <div class="mt-2 text-2xl font-bold text-emerald-700 mono">128</div>
+              <div class="mt-1 text-[11px] text-zinc-500">Audited views this semester</div>
+            </div>
+          </div>
+
+          <!-- Full-Width Data Table: Report Library -->
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / REPORT LIBRARY</div>
+            <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Governance &amp; Module Report Library</h3>
+            <div class="overflow-x-auto border border-zinc-200">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500 mono">
+                    <th class="py-2.5 px-3">Report Title</th><th class="py-2.5 px-3">Subject Module</th><th class="py-2.5 px-3">Author Role</th><th class="py-2.5 px-3">PII Status</th><th class="py-2.5 px-3 text-right">Views</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-200 mono text-[11px]">
+                  <tr class="hover:bg-zinc-50"><td class="py-2.5 px-3 font-semibold text-zinc-900">Customer XML Completeness Audit</td><td class="py-2.5 px-3">Customer Profile</td><td class="py-2.5 px-3">Governance</td><td class="py-2.5 px-3 text-emerald-700">100% Masked</td><td class="py-2.5 px-3 text-right">46</td></tr>
+                  <tr class="hover:bg-zinc-50"><td class="py-2.5 px-3 font-semibold text-zinc-900">Duplicate BusinessEntityID Exception Log</td><td class="py-2.5 px-3">Customer Profile</td><td class="py-2.5 px-3">Governance</td><td class="py-2.5 px-3 text-emerald-700">100% Masked</td><td class="py-2.5 px-3 text-right">31</td></tr>
+                  <tr class="hover:bg-zinc-50"><td class="py-2.5 px-3 font-semibold text-zinc-900">Territory Gross Sales &amp; Order Volume</td><td class="py-2.5 px-3">Sales</td><td class="py-2.5 px-3">Optimization</td><td class="py-2.5 px-3 text-zinc-500">Aggregated</td><td class="py-2.5 px-3 text-right">24</td></tr>
+                  <tr class="hover:bg-zinc-50"><td class="py-2.5 px-3 font-semibold text-zinc-900">Negative Margin SKU &amp; Discount Alert</td><td class="py-2.5 px-3">Revenue &amp; Loss</td><td class="py-2.5 px-3">Science</td><td class="py-2.5 px-3 text-zinc-500">Aggregated</td><td class="py-2.5 px-3 text-right">15</td></tr>
+                  <tr class="hover:bg-zinc-50"><td class="py-2.5 px-3 font-semibold text-zinc-900">Standard Cost Coverage &amp; Vendor Spend</td><td class="py-2.5 px-3">Cost</td><td class="py-2.5 px-3">Engineering</td><td class="py-2.5 px-3 text-zinc-500">Aggregated</td><td class="py-2.5 px-3 text-right">12</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom 2-Col Row: Bar Chart Usage by Subject + List Scheduled Deliveries -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-6 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">BAR CHART / USAGE BY SUBJECT</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Report Views by Subject Area (Units: Views)</h3>
+              <div class="relative h-64 w-full"><canvas id="chartReportsUsage"></canvas></div>
+            </div>
+            <div class="lg:col-span-6 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">LIST / SCHEDULED DELIVERIES</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Automated Governance &amp; BI Deliveries</h3>
+              <div class="space-y-2.5 text-xs">
+                <div class="p-3 border border-zinc-200 bg-zinc-50 flex justify-between items-center"><div><div class="font-semibold text-zinc-900">Weekly PII Masking Compliance Digest</div><div class="text-[11px] text-zinc-500 mono">Every Monday • 08:00 PHT • CSV (Masked)</div></div><span class="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-800 mono font-bold">ACTIVE</span></div>
+                <div class="p-3 border border-zinc-200 bg-zinc-50 flex justify-between items-center"><div><div class="font-semibold text-zinc-900">Inactive Customer &amp; Duplicate ID Snapshot</div><div class="text-[11px] text-zinc-500 mono">Every Friday • 17:00 PHT • Governance</div></div><span class="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-800 mono font-bold">ACTIVE</span></div>
+                <div class="p-3 border border-zinc-200 bg-zinc-50 flex justify-between items-center"><div><div class="font-semibold text-zinc-900">Monthly Executive Revenue &amp; Cost Rollup</div><div class="text-[11px] text-zinc-500 mono">1st of Month • Manager &amp; Admin Only</div></div><span class="px-2 py-0.5 text-[10px] bg-zinc-200 text-zinc-700 mono font-bold">SCHEDULED</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- PAGE 3: REVENUE & LOSS (Matches Wireframe: 4 KPIs + Line/P&L + Table) -->
+        <!-- =============================================================== -->
+        <div id="view-revenue_loss" class="hidden space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="text-[11px] font-medium uppercase tracking-widest text-zinc-500 mono">FINANCIALS / DATA SCIENCE</div>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mt-1">Revenue &amp; loss</h2>
+              <p class="text-xs sm:text-sm text-zinc-500 mt-1">Revenue, gross profit, and operating cost performance.</p>
+            </div>
+            <button type="button" class="export-btn px-4 py-2 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-semibold uppercase tracking-wider mono transition">EXPORT VIEW &darr;</button>
+          </div>
+
+          <!-- 4 KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">NET SALES</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">$109.85M</div><div class="mt-1 text-[11px] text-zinc-500">USD (2011–2014)</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">COST OF GOODS</div><div class="mt-2 text-2xl font-bold text-amber-700 mono">$97.26M</div><div class="mt-1 text-[11px] text-zinc-500">Est. Standard COGS</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">GROSS PROFIT</div><div class="mt-2 text-2xl font-bold text-emerald-700 mono">$12.59M</div><div class="mt-1 text-[11px] text-zinc-500">11.46% Gross Margin</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">OPERATING INCOME</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">N/A (Doc)</div><div class="mt-1 text-[11px] text-zinc-500">OpEx absent in AW2019</div></div>
+          </div>
+
+          <!-- Asymmetric 2-Col Row: Line Chart + Income Statement Summary -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-7 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">LINE CHART / REVENUE AND COST TREND</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Annual Revenue vs. Standard COGS Trend (Units: $ Millions USD)</h3>
+              <div class="relative h-72 w-full"><canvas id="chartRevLossTrend"></canvas></div>
+            </div>
+            <div class="lg:col-span-5 bg-white border border-zinc-200 p-5 flex flex-col justify-between">
+              <div>
+                <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">SUMMARY / INCOME STATEMENT</div>
+                <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">AdventureWorks2019 P&amp;L Summary</h3>
+                <div class="space-y-2.5 text-xs mono">
+                  <div class="flex justify-between py-1.5 border-b border-zinc-200"><span>Gross Product Sales</span><strong>$110.39M</strong></div>
+                  <div class="flex justify-between py-1.5 border-b border-zinc-200 text-rose-700"><span>Less: Promo Discounts</span><span>($0.54M)</span></div>
+                  <div class="flex justify-between py-1.5 border-b border-zinc-200"><span>Net Sales Revenue</span><strong>$109.85M</strong></div>
+                  <div class="flex justify-between py-1.5 border-b border-zinc-200 text-amber-700"><span>Less: Standard COGS</span><span>($97.26M)</span></div>
+                  <div class="flex justify-between py-2 bg-zinc-50 px-2 font-bold text-emerald-700"><span>Estimated Gross Profit</span><span>$12.59M</span></div>
+                </div>
+              </div>
+              <p class="text-[11px] text-zinc-500 mt-3 pt-2 border-t border-zinc-200">Note: Non-operating overhead &amp; loss accounts are documented as unavailable in AdventureWorks2019 rather than inventing figures.</p>
+            </div>
+          </div>
+
+          <!-- Full-Width Table: Annual Comparison -->
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / ANNUAL COMPARISON</div>
+            <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Year-over-Year Revenue &amp; Margin Comparison</h3>
+            <div class="overflow-x-auto border border-zinc-200">
+              <table class="w-full text-left border-collapse text-xs mono">
+                <thead><tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500"><th class="py-2.5 px-3">Fiscal Year</th><th class="py-2.5 px-3 text-right">Net Sales ($M)</th><th class="py-2.5 px-3 text-right">Est. COGS ($M)</th><th class="py-2.5 px-3 text-right">Gross Profit ($M)</th><th class="py-2.5 px-3 text-right">Gross Margin (%)</th></tr></thead>
+                <tbody class="divide-y divide-zinc-200 text-[11px]">
+                  <tr><td class="py-2.5 px-3 font-semibold">2011</td><td class="py-2.5 px-3 text-right">$12.64M</td><td class="py-2.5 px-3 text-right">$11.12M</td><td class="py-2.5 px-3 text-right text-emerald-700">$1.52M</td><td class="py-2.5 px-3 text-right">12.02%</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">2012</td><td class="py-2.5 px-3 text-right">$33.52M</td><td class="py-2.5 px-3 text-right">$29.68M</td><td class="py-2.5 px-3 text-right text-emerald-700">$3.84M</td><td class="py-2.5 px-3 text-right">11.46%</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">2013</td><td class="py-2.5 px-3 text-right">$43.62M</td><td class="py-2.5 px-3 text-right">$38.65M</td><td class="py-2.5 px-3 text-right text-emerald-700">$4.97M</td><td class="py-2.5 px-3 text-right">11.39%</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">2014 (YTD)</td><td class="py-2.5 px-3 text-right">$20.07M</td><td class="py-2.5 px-3 text-right">$17.81M</td><td class="py-2.5 px-3 text-right text-emerald-700">$2.26M</td><td class="py-2.5 px-3 text-right">11.26%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- PAGE 4: PRODUCTS (Matches Wireframe: 4 KPIs + Chart/Table + Watchlist) -->
+        <!-- =============================================================== -->
+        <div id="view-products" class="hidden space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="text-[11px] font-medium uppercase tracking-widest text-zinc-500 mono">CATALOG / COST &amp; ENGINEERING</div>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mt-1">Products</h2>
+              <p class="text-xs sm:text-sm text-zinc-500 mt-1">Product, category, and inventory performance.</p>
+            </div>
+            <button type="button" class="export-btn px-4 py-2 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-semibold uppercase tracking-wider mono transition">EXPORT VIEW &darr;</button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">ACTIVE PRODUCTS</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">504</div><div class="mt-1 text-[11px] text-zinc-500">Production.Product SKUs</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">UNITS SOLD</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">274,914</div><div class="mt-1 text-[11px] text-zinc-500">OrderQty Sum</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">TOP CATEGORY</div><div class="mt-2 text-2xl font-bold text-emerald-700 mono">Bikes</div><div class="mt-1 text-[11px] text-zinc-500">78.3% of Total Revenue</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">INVENTORY VALUE</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">$64.12M</div><div class="mt-1 text-[11px] text-zinc-500">395 Costed SKUs (78.4%)</div></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-5 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">BAR CHART / REVENUE BY CATEGORY</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Revenue by Product Category (Units: $M USD)</h3>
+              <div class="relative h-64 w-full"><canvas id="chartProductsCategory"></canvas></div>
+            </div>
+            <div class="lg:col-span-7 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / TOP PRODUCTS</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Top Performing Products (`Production.Product`)</h3>
+              <div class="overflow-x-auto border border-zinc-200">
+                <table class="w-full text-left border-collapse text-xs mono">
+                  <thead><tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500"><th class="py-2 px-3">Product</th><th class="py-2 px-3">Category</th><th class="py-2 px-3 text-right">Std Cost</th><th class="py-2 px-3 text-right">Units Sold</th></tr></thead>
+                  <tbody class="divide-y divide-zinc-200 text-[11px]">
+                    <tr><td class="py-2 px-3 font-semibold">Mountain-200 Black, 38</td><td class="py-2 px-3">Bikes</td><td class="py-2 px-3 text-right">$1,251.98</td><td class="py-2 px-3 text-right">2,977</td></tr>
+                    <tr><td class="py-2 px-3 font-semibold">Road-150 Red, 48</td><td class="py-2 px-3">Bikes</td><td class="py-2 px-3 text-right">$2,171.29</td><td class="py-2 px-3 text-right">1,124</td></tr>
+                    <tr><td class="py-2 px-3 font-semibold">HL Mountain Frame - Black</td><td class="py-2 px-3">Components</td><td class="py-2 px-3 text-right">$739.04</td><td class="py-2 px-3 text-right">1,452</td></tr>
+                    <tr><td class="py-2 px-3 font-semibold">AWC Logo Cap</td><td class="py-2 px-3">Clothing</td><td class="py-2 px-3 text-right">$6.92</td><td class="py-2 px-3 text-right">8,311</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / INVENTORY WATCHLIST</div>
+            <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Cost Governance Watchlist (Missing StandardCost / Low Stock)</h3>
+            <div class="overflow-x-auto border border-zinc-200">
+              <table class="w-full text-left border-collapse text-xs mono">
+                <thead><tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500"><th class="py-2 px-3">ProductNumber</th><th class="py-2 px-3">Name</th><th class="py-2 px-3">StandardCost</th><th class="py-2 px-3">Governance Flag</th></tr></thead>
+                <tbody class="divide-y divide-zinc-200 text-[11px]">
+                  <tr><td class="py-2 px-3">AR-5381</td><td class="py-2 px-3">Adjustable Race</td><td class="py-2 px-3 text-amber-700">$0.00 (Unassigned)</td><td class="py-2 px-3">Raw Sub-Assembly</td></tr>
+                  <tr><td class="py-2 px-3">BA-8327</td><td class="py-2 px-3">Bearing Ball</td><td class="py-2 px-3 text-amber-700">$0.00 (Unassigned)</td><td class="py-2 px-3">Raw Sub-Assembly</td></tr>
+                  <tr><td class="py-2 px-3">CA-5965</td><td class="py-2 px-3">Cable Lock</td><td class="py-2 px-3">$10.31</td><td class="py-2 px-3 text-rose-700">Below SafetyStockLevel</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- PAGE 5: CUSTOMERS (Matches Wireframe: 4 KPIs + Seg/Top + Cohort) -->
+        <!-- =============================================================== -->
+        <div id="view-customers" class="hidden space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="text-[11px] font-medium uppercase tracking-widest text-zinc-500 mono">AUDIENCE / DATA GOVERNANCE</div>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mt-1">Customers</h2>
+              <p class="text-xs sm:text-sm text-zinc-500 mt-1">Customer value, growth, and purchase behavior (PII Masking Enforced).</p>
+            </div>
+            <button type="button" class="export-btn px-4 py-2 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-semibold uppercase tracking-wider mono transition">EXPORT VIEW &darr;</button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">CUSTOMER ACCOUNTS</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">19,820</div><div class="mt-1 text-[11px] text-zinc-500">18,484 IN • 1,336 SC</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">NEW CUSTOMERS (YTD)</div><div class="mt-2 text-2xl font-bold text-emerald-700 mono">2,410</div><div class="mt-1 text-[11px] text-zinc-500">+14.2% vs Prior Period</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">REPEAT PURCHASE RATE</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">64.2%</div><div class="mt-1 text-[11px] text-zinc-500">2+ Orders in OrderHeader</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">CUSTOMER VALUE</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">$5,542</div><div class="mt-1 text-[11px] text-zinc-500">Avg Lifetime Value (USD)</div></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-5 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">BAR CHART / CUSTOMER SEGMENTS</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Accounts by Segment (Units: Accounts)</h3>
+              <div class="relative h-64 w-full"><canvas id="chartCustomersSegments"></canvas></div>
+            </div>
+            <div class="lg:col-span-7 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / TOP CUSTOMERS (PII MASKED)</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Highest Value Customer Accounts (`Person.Person` Masked)</h3>
+              <div class="overflow-x-auto border border-zinc-200">
+                <table class="w-full text-left border-collapse text-xs mono">
+                  <thead><tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500"><th class="py-2 px-3">Account #</th><th class="py-2 px-3">Masked Name</th><th class="py-2 px-3">Segment</th><th class="py-2 px-3 text-right">Orders</th><th class="py-2 px-3 text-right">Total Spend</th></tr></thead>
+                  <tbody class="divide-y divide-zinc-200 text-[11px]">
+                    <tr><td class="py-2 px-3 font-semibold">AW00029485</td><td class="py-2 px-3">C******** A*** (Store)</td><td class="py-2 px-3">Store (SC)</td><td class="py-2 px-3 text-right">12</td><td class="py-2 px-3 text-right text-emerald-700">$989,184</td></tr>
+                    <tr><td class="py-2 px-3 font-semibold">AW00029486</td><td class="py-2 px-3">K** A********** (Store)</td><td class="py-2 px-3">Store (SC)</td><td class="py-2 px-3 text-right">8</td><td class="py-2 px-3 text-right text-emerald-700">$841,908</td></tr>
+                    <tr><td class="py-2 px-3 font-semibold">AW00011019</td><td class="py-2 px-3">L*** L**</td><td class="py-2 px-3">Individual (IN)</td><td class="py-2 px-3 text-right">6</td><td class="py-2 px-3 text-right">$13,295</td></tr>
+                    <tr><td class="py-2 px-3 font-semibold">AW00011004</td><td class="py-2 px-3">E******** J******</td><td class="py-2 px-3">Individual (IN)</td><td class="py-2 px-3 text-right">5</td><td class="py-2 px-3 text-right">$11,420</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / CUSTOMER ACQUISITION</div>
+            <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Customer Acquisition &amp; XML Completeness Cohort</h3>
+            <div class="overflow-x-auto border border-zinc-200">
+              <table class="w-full text-left border-collapse text-xs mono">
+                <thead><tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500"><th class="py-2 px-3">Cohort Year</th><th class="py-2 px-3 text-right">New Accounts</th><th class="py-2 px-3 text-right">Active Rate</th><th class="py-2 px-3 text-right">XML Completeness</th></tr></thead>
+                <tbody class="divide-y divide-zinc-200 text-[11px]">
+                  <tr><td class="py-2 px-3 font-semibold">2011</td><td class="py-2 px-3 text-right">2,216</td><td class="py-2 px-3 text-right">81.4%</td><td class="py-2 px-3 text-right">89.2%</td></tr>
+                  <tr><td class="py-2 px-3 font-semibold">2012</td><td class="py-2 px-3 text-right">5,840</td><td class="py-2 px-3 text-right">85.1%</td><td class="py-2 px-3 text-right">91.0%</td></tr>
+                  <tr><td class="py-2 px-3 font-semibold">2013</td><td class="py-2 px-3 text-right">9,354</td><td class="py-2 px-3 text-right">88.9%</td><td class="py-2 px-3 text-right">93.4%</td></tr>
+                  <tr><td class="py-2 px-3 font-semibold">2014 (YTD)</td><td class="py-2 px-3 text-right">2,410</td><td class="py-2 px-3 text-right">84.7%</td><td class="py-2 px-3 text-right">92.5%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- PAGE 6: SALES TERRITORIES (Matches Wireframe: 4 KPIs + Dist/Contrib + Table) -->
+        <!-- =============================================================== -->
+        <div id="view-territories" class="hidden space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="text-[11px] font-medium uppercase tracking-widest text-zinc-500 mono">GEOGRAPHY / REGIONAL PERFORMANCE</div>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mt-1">Sales territories</h2>
+              <p class="text-xs sm:text-sm text-zinc-500 mt-1">Regional sales performance across global territories.</p>
+            </div>
+            <button type="button" class="export-btn px-4 py-2 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-semibold uppercase tracking-wider mono transition">EXPORT VIEW &darr;</button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">SALES TERRITORIES</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">10</div><div class="mt-1 text-[11px] text-zinc-500">NA, Europe &amp; Pacific</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">TOP TERRITORY</div><div class="mt-2 text-2xl font-bold text-emerald-700 mono">Southwest</div><div class="mt-1 text-[11px] text-zinc-500">$24.18M Total Sales</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">FASTEST GROWTH</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">Australia</div><div class="mt-1 text-[11px] text-zinc-500">+18.4% YoY Orders</div></div>
+            <div class="bg-white border border-zinc-200 p-5"><div class="text-[11px] font-semibold uppercase text-zinc-500 mono">SALESPEOPLE</div><div class="mt-2 text-2xl font-bold text-zinc-900 mono">17</div><div class="mt-1 text-[11px] text-zinc-500">Sales.SalesPerson</div></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-7 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DISTRIBUTION / TERRITORY SALES</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Sales Distribution by Territory (Units: $M USD)</h3>
+              <div class="relative h-72 w-full"><canvas id="chartTerritorySales"></canvas></div>
+            </div>
+            <div class="lg:col-span-5 bg-white border border-zinc-200 p-5">
+              <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">BAR CHART / REGIONAL CONTRIBUTION</div>
+              <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Revenue Share by Territory Group (Units: %)</h3>
+              <div class="relative h-72 w-full"><canvas id="chartRegionalContribution"></canvas></div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-zinc-200 p-5">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mono">DATA TABLE / TERRITORY PERFORMANCE</div>
+            <h3 class="text-sm font-bold text-zinc-900 mt-0.5 mb-3">Regional Sales &amp; Governance Performance (`Sales.SalesTerritory`)</h3>
+            <div class="overflow-x-auto border border-zinc-200">
+              <table class="w-full text-left border-collapse text-xs mono">
+                <thead><tr class="bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase text-zinc-500"><th class="py-2.5 px-3">Territory</th><th class="py-2.5 px-3">Group</th><th class="py-2.5 px-3 text-right">Customers</th><th class="py-2.5 px-3 text-right">Sales ($M)</th><th class="py-2.5 px-3 text-right">Address Conflicts</th></tr></thead>
+                <tbody class="divide-y divide-zinc-200 text-[11px]">
+                  <tr><td class="py-2.5 px-3 font-semibold">Southwest</td><td class="py-2.5 px-3">North America</td><td class="py-2.5 px-3 text-right">4,725</td><td class="py-2.5 px-3 text-right text-emerald-700">$24.18M</td><td class="py-2.5 px-3 text-right">31</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">Canada</td><td class="py-2.5 px-3">North America</td><td class="py-2.5 px-3 text-right">1,761</td><td class="py-2.5 px-3 text-right">$16.36M</td><td class="py-2.5 px-3 text-right">16</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">Northwest</td><td class="py-2.5 px-3">North America</td><td class="py-2.5 px-3 text-right">3,536</td><td class="py-2.5 px-3 text-right">$16.08M</td><td class="py-2.5 px-3 text-right">22</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">Australia</td><td class="py-2.5 px-3">Pacific</td><td class="py-2.5 px-3 text-right">3,726</td><td class="py-2.5 px-3 text-right">$10.66M</td><td class="py-2.5 px-3 text-right">29</td></tr>
+                  <tr><td class="py-2.5 px-3 font-semibold">United Kingdom</td><td class="py-2.5 px-3">Europe</td><td class="py-2.5 px-3 text-right">2,076</td><td class="py-2.5 px-3 text-right">$7.67M</td><td class="py-2.5 px-3 text-right">15</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- PAGE 7: RBAC & AUDIT LOGS                                       -->
+        <!-- =============================================================== -->
+        <div id="view-rbac_audit" class="hidden space-y-6">
+          <div class="bg-white border border-zinc-200 p-6 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="text-[11px] uppercase tracking-widest text-zinc-500 mono">SECURITY &amp; GOVERNANCE</div>
+                <h2 class="text-2xl font-bold text-zinc-900">RBAC Permissions &amp; Live Audit Trail</h2>
+              </div>
+              <button id="btnSimulateDenied" type="button" class="px-3.5 py-2 bg-zinc-900 text-white text-xs font-semibold mono hover:bg-zinc-800 transition">Simulate Denied 403 Access</button>
+            </div>
+            <div id="auditLogContainer" class="space-y-2 mono text-xs"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </section>
+
+  <!-- MODAL: 403 ACCESS DENIED -->
+  <div id="deniedModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white border border-zinc-900 p-6 login-card-shadow space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-zinc-900 text-white flex items-center justify-center font-bold mono text-sm">403</div>
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-rose-600 font-bold mono">HTTP 403 Forbidden</div>
+          <h3 id="modalTitle" class="text-base font-bold text-zinc-900">Access Denied by RBAC Policy</h3>
+        </div>
+      </div>
+      <div class="bg-zinc-50 border border-zinc-200 p-3 text-xs space-y-1.5">
+        <div><span class="text-zinc-500">Active Role:</span> <strong id="modalRole" class="mono"></strong></div>
+        <div><span class="text-zinc-500">Blocked Action:</span> <strong id="modalRoute" class="text-rose-700 mono"></strong></div>
+        <p id="modalReason" class="text-zinc-600 pt-1 border-t border-zinc-200"></p>
+      </div>
+      <div class="flex justify-end">
+        <button id="btnCloseModal" type="button" class="px-4 py-2 bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 transition">Acknowledge &amp; Return</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ROLES = {
+      governance: { name: 'Data Governance', tag: 'GOVERNANCE', initials: 'DG', allowed: ['dashboard', 'reports', 'customers', 'rbac_audit'], canExport: true },
+      admin: { name: 'System Admin', tag: 'ADMINISTRATOR', initials: 'SA', allowed: ['dashboard', 'reports', 'revenue_loss', 'products', 'customers', 'territories', 'rbac_audit'], canExport: true },
+      manager: { name: 'Exec Manager', tag: 'MANAGER', initials: 'EM', allowed: ['dashboard', 'reports', 'revenue_loss', 'products', 'customers', 'territories', 'rbac_audit'], canExport: true },
+      supervisor: { name: 'Dept Supervisor', tag: 'SUPERVISOR', initials: 'DS', allowed: ['dashboard', 'reports', 'customers', 'territories', 'rbac_audit'], canExport: true },
+      employee: { name: 'Staff Employee', tag: 'EMPLOYEE', initials: 'SE', allowed: ['dashboard', 'customers', 'rbac_audit'], canExport: false }
+    };
+
+    const TERRITORIES = [
+      { territory: 'Southwest', indA: 3910, indI: 515, scA: 262, scI: 38, xml: 93.4, anom: { Inactive: 553, MissingXML: 195, Duplicate: 48, TerritoryConflict: 31 } },
+      { territory: 'Northwest', indA: 2920, indI: 392, scA: 198, scI: 26, xml: 92.8, anom: { Inactive: 418, MissingXML: 142, Duplicate: 36, TerritoryConflict: 22 } },
+      { territory: 'Australia', indA: 3065, indI: 525, scA: 112, scI: 24, xml: 89.2, anom: { Inactive: 549, MissingXML: 264, Duplicate: 41, TerritoryConflict: 29 } },
+      { territory: 'United Kingdom', indA: 1680, indI: 274, scA: 104, scI: 18, xml: 91.5, anom: { Inactive: 292, MissingXML: 118, Duplicate: 24, TerritoryConflict: 15 } },
+      { territory: 'Germany', indA: 1520, indI: 256, scA: 94, scI: 16, xml: 91.0, anom: { Inactive: 272, MissingXML: 112, Duplicate: 19, TerritoryConflict: 14 } },
+      { territory: 'France', indA: 1495, indI: 265, scA: 92, scI: 18, xml: 90.4, anom: { Inactive: 283, MissingXML: 126, Duplicate: 22, TerritoryConflict: 17 } },
+      { territory: 'Canada', indA: 1360, indI: 215, scA: 164, scI: 22, xml: 93.1, anom: { Inactive: 237, MissingXML: 84, Duplicate: 18, TerritoryConflict: 16 } },
+      { territory: 'Southeast', indA: 142, indI: 34, scA: 98, scI: 14, xml: 92.0, anom: { Inactive: 48, MissingXML: 19, Duplicate: 7, TerritoryConflict: 9 } },
+      { territory: 'Northeast', indA: 98, indI: 22, scA: 82, scI: 10, xml: 92.6, anom: { Inactive: 32, MissingXML: 14, Duplicate: 5, TerritoryConflict: 6 } },
+      { territory: 'Central', indA: 86, indI: 20, scA: 72, scI: 10, xml: 91.9, anom: { Inactive: 30, MissingXML: 12, Duplicate: 6, TerritoryConflict: 5 } }
+    ];
+
+    const CUSTOMERS = [
+      { account: 'AW00011000', name: 'J** Y***', phone: '***-***-0162', seg: 'IN', territory: 'Australia', orders: 3, xml: 100, status: 'Verified' },
+      { account: 'AW00011002', name: 'R**** T*****', phone: '***-***-0184', seg: 'IN', territory: 'Australia', orders: 3, xml: 82, status: 'MissingXML' },
+      { account: 'AW00011003', name: 'C****** Z**', phone: '***-***-0162', seg: 'IN', territory: 'Southwest', orders: 0, xml: 88, status: 'Inactive' },
+      { account: 'AW00011005', name: 'J**** R***', phone: '***-***-0151', seg: 'IN', territory: 'Southwest', orders: 2, xml: 91, status: 'Duplicate' },
+      { account: 'AW00011012', name: 'L***** W*****', phone: '***-***-0164', seg: 'IN', territory: 'Northwest', orders: 4, xml: 100, status: 'Verified' },
+      { account: 'AW00011019', name: 'L*** L**', phone: '***-***-0142', seg: 'IN', territory: 'Canada', orders: 6, xml: 94, status: 'TerritoryConflict' },
+      { account: 'AW00029485', name: 'C******** A*** (Store)', phone: '***-***-0199', seg: 'SC', territory: 'Northwest', orders: 12, xml: 98, status: 'Verified' },
+      { account: 'AW00029486', name: 'K** A********** (Store)', phone: '***-***-0138', seg: 'SC', territory: 'Southwest', orders: 8, xml: 76, status: 'MissingXML' },
+      { account: 'AW00029489', name: 'F****** A**** (Store)', phone: '***-***-0175', seg: 'SC', territory: 'Central', orders: 0, xml: 90, status: 'Inactive' },
+      { account: 'AW00011240', name: 'S***** M*****', phone: '***-***-1820', seg: 'IN', territory: 'France', orders: 3, xml: 95, status: 'Verified' },
+      { account: 'AW00011385', name: 'L**** W****', phone: '***-***-0144', seg: 'IN', territory: 'Germany', orders: 1, xml: 72, status: 'MissingXML' },
+      { account: 'AW00011502', name: 'O***** D*****', phone: '***-***-0192', seg: 'IN', territory: 'United Kingdom', orders: 2, xml: 92, status: 'Duplicate' },
+      { account: 'AW00029610', name: 'M***** V**** (Store)', phone: '***-***-0188', seg: 'SC', territory: 'Southeast', orders: 9, xml: 89, status: 'TerritoryConflict' },
+      { account: 'AW00029702', name: 'E**** R****** (Store)', phone: '***-***-0129', seg: 'SC', territory: 'Northeast', orders: 7, xml: 97, status: 'Verified' }
+    ];
+
+    let isDarkMode = false;
+    let charts = {};
+    let state = {
+      role: 'governance',
+      territory: 'ALL',
+      segment: 'ALL',
+      status: 'ALL',
+      search: '',
+      logs: [
+        { time: '13:02:10', role: 'Data Governance', action: 'POST /login/', status: 'ALLOWED (200)', detail: 'Authenticated into AdventureWorks BI Workspace' },
+        { time: '13:03:04', role: 'Data Governance', action: 'PII Masking Check', status: 'ENFORCED', detail: 'Masked Person.Person names and PersonPhone numbers' },
+        { time: '13:04:19', role: 'Data Governance', action: 'GET /revenue-loss/', status: 'DENIED (403)', detail: 'Cross-department access blocked by RBAC policy' }
+      ]
+    };
+
+    function toggleTheme() {
+      isDarkMode = !isDarkMode;
+      document.body.classList.toggle('dark-mode', isDarkMode);
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+      });
+      try { localStorage.setItem('aw_theme', isDarkMode ? 'dark' : 'light'); } catch (e) {}
+
+      const tick = isDarkMode ? '#a1a1aa' : '#52525b';
+      const grid = isDarkMode ? '#27272a' : '#f4f4f5';
+      Chart.defaults.color = tick;
+
+      Object.values(charts).forEach(ch => {
+        if (!ch) return;
+        if (ch.options.scales) {
+          if (ch.options.scales.x) { ch.options.scales.x.ticks.color = tick; if (ch.options.scales.x.grid) ch.options.scales.x.grid.color = grid; }
+          if (ch.options.scales.y) { ch.options.scales.y.ticks.color = tick; if (ch.options.scales.y.grid) ch.options.scales.y.grid.color = grid; }
+        }
+        if (ch.config.type === 'doughnut') {
+          ch.data.datasets[0].borderColor = isDarkMode ? '#18181b' : '#ffffff';
+        }
+        ch.update();
+      });
+    }
+
+    function addLog(action, status, detail) {
+      const t = new Date().toTimeString().split(' ')[0];
+      state.logs.unshift({ time: t, role: ROLES[state.role].name, action, status, detail });
+      document.getElementById('auditBadgeCount').textContent = String(state.logs.length);
+      renderLogs();
+    }
+
+    function renderLogs() {
+      document.getElementById('auditLogContainer').innerHTML = state.logs.map(l => `
+        <div class="p-3 border ${l.status.includes('DENIED') ? 'border-rose-300 bg-rose-50' : 'border-zinc-200 bg-zinc-50'} flex flex-wrap justify-between gap-2">
+          <div><span class="text-zinc-500">${l.time}</span> • <strong>${l.role}</strong> — <span class="text-zinc-900">${l.action}</span><div class="text-zinc-600 font-sans mt-0.5">${l.detail}</div></div>
+          <span class="px-2 py-0.5 h-fit text-[10px] font-bold ${l.status.includes('DENIED') ? 'bg-rose-200 text-rose-900' : 'bg-emerald-100 text-emerald-900'}">${l.status}</span>
+        </div>
+      `).join('');
+    }
+
+    function openDeniedModal(title, route, reason) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalRole').textContent = ROLES[state.role].name;
+      document.getElementById('modalRoute').textContent = route;
+      document.getElementById('modalReason').textContent = reason;
+      document.getElementById('deniedModal').classList.remove('hidden');
+      addLog(route, 'DENIED (403)', reason);
+    }
+
+    function syncRoleUI() {
+      const r = ROLES[state.role];
+      document.getElementById('userAvatarInitials').textContent = r.initials;
+      document.getElementById('userDisplayName').textContent = r.name;
+      document.getElementById('userDisplayRole').textContent = r.tag;
+      document.getElementById('headerRoleSwitcher').value = state.role;
+      document.querySelectorAll('.export-btn').forEach(b => b.style.display = r.canExport ? 'inline-flex' : 'none');
+      ['reports', 'revenue_loss', 'products', 'customers', 'territories'].forEach(m => {
+        const el = document.getElementById(`lock-${m}`);
+        if (el) el.textContent = r.allowed.includes(m) ? '✓' : '🔒';
+      });
+    }
+
+    function updateDashboard() {
+      const rows = TERRITORIES.filter(t => state.territory === 'ALL' || t.territory === state.territory);
+      let act = 0, inact = 0, xmlSum = 0;
+      let anom = { Inactive: 0, MissingXML: 0, Duplicate: 0, TerritoryConflict: 0 };
+      const labels = [], actArr = [], inactArr = [];
+
+      rows.forEach(r => {
+        let a = state.segment === 'IN' ? r.indA : state.segment === 'SC' ? r.scA : (r.indA + r.scA);
+        let i = state.segment === 'IN' ? r.indI : state.segment === 'SC' ? r.scI : (r.indI + r.scI);
+        if (state.status === 'Inactive') a = 0;
+        if (state.status === 'Verified') i = 0;
+        const scale = state.segment === 'IN' ? 0.92 : state.segment === 'SC' ? 0.08 : 1;
+        act += a; inact += i; xmlSum += r.xml * (a + i);
+        anom.Inactive += Math.round(r.anom.Inactive * scale);
+        anom.MissingXML += Math.round(r.anom.MissingXML * scale);
+        anom.Duplicate += Math.round(r.anom.Duplicate * scale);
+        anom.TerritoryConflict += Math.round(r.anom.TerritoryConflict * scale);
+        labels.push(r.territory); actArr.push(a); inactArr.push(i);
+      });
+
+      const total = act + inact;
+      const actRate = total ? ((act / total) * 100).toFixed(1) : '0.0';
+      const avgXml = total ? (xmlSum / total).toFixed(1) : '0.0';
+      let issues = anom.Inactive + anom.MissingXML + anom.Duplicate + anom.TerritoryConflict;
+      if (state.status === 'Verified') issues = 0;
+      else if (state.status !== 'ALL') issues = anom[state.status] || issues;
+
+      document.getElementById('kpiTotalAccounts').textContent = total.toLocaleString();
+      document.getElementById('kpiActiveRate').textContent = `${actRate}%`;
+      document.getElementById('kpiActiveCount').textContent = `(${act.toLocaleString()} active)`;
+      document.getElementById('kpiXmlScore').textContent = `${avgXml}%`;
+      document.getElementById('kpiIssues').textContent = issues.toLocaleString();
+
+      if (charts.c1) { charts.c1.data.labels = labels; charts.c1.data.datasets[0].data = actArr; charts.c1.data.datasets[1].data = inactArr; charts.c1.update(); }
+      if (charts.c2) { charts.c2.data.datasets[0].data = [anom.Inactive, anom.MissingXML, anom.Duplicate, anom.TerritoryConflict]; charts.c2.update(); }
+      if (charts.c3) {
+        const f = (parseFloat(avgXml) / 91.8) || 0;
+        charts.c3.data.datasets[0].data = [99.4, 97.8, 94.6, 91.2, 88.5, 84.1, 86.9].map(v => Math.min(100, v * f).toFixed(1));
+        charts.c3.update();
+      }
+      renderTable();
+    }
+
+    function renderTable() {
+      const q = state.search.trim().toLowerCase();
+      const filtered = CUSTOMERS.filter(c => {
+        if (state.territory !== 'ALL' && c.territory !== state.territory) return false;
+        if (state.segment !== 'ALL' && c.seg !== state.segment) return false;
+        if (state.status !== 'ALL' && c.status !== state.status) return false;
+        if (q && !`${c.account} ${c.territory} ${c.name}`.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      document.getElementById('tableCountBadge').textContent = `Showing ${filtered.length} records`;
+      document.getElementById('customerTableBody').innerHTML = filtered.length ? filtered.map(c => `
+        <tr class="hover:bg-zinc-50">
+          <td class="py-2.5 px-3 font-semibold text-zinc-900">${c.account}</td><td class="py-2.5 px-3 text-zinc-700">${c.name}</td>
+          <td class="py-2.5 px-3 text-zinc-500">${c.phone}</td><td class="py-2.5 px-3">${c.seg === 'IN' ? 'Individual (IN)' : 'Store (SC)'}</td>
+          <td class="py-2.5 px-3">${c.territory}</td><td class="py-2.5 px-3 text-right">${c.orders}</td>
+          <td class="py-2.5 px-3 text-right font-semibold">${c.xml}%</td>
+          <td class="py-2.5 px-3"><span class="px-2 py-0.5 text-[10px] border border-zinc-300 bg-zinc-50">${c.status}</span></td>
+        </tr>
+      `).join('') : '<tr><td colspan="8" class="py-6 text-center text-zinc-500">No matching customer records found.</td></tr>';
+    }
+
+    function initAllCharts() {
+      Chart.defaults.color = '#52525b';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+
+      charts.c1 = new Chart(document.getElementById('chartTerritory').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: TERRITORIES.map(t => t.territory),
+          datasets: [
+            { label: 'Active Accounts', data: TERRITORIES.map(t => t.indA + t.scA), backgroundColor: '#2563eb', borderRadius: 3 },
+            { label: 'Inactive Accounts', data: TERRITORIES.map(t => t.indI + t.scI), backgroundColor: '#f59e0b', borderRadius: 3 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f4f4f5' } } } }
+      });
+
+      charts.c2 = new Chart(document.getElementById('chartAnomalies').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Inactive Accounts', 'Missing XML Nodes', 'Duplicate IDs', 'Territory Conflicts'],
+          datasets: [{ data: [2714, 1086, 226, 164], backgroundColor: ['#f59e0b', '#0ea5e9', '#8b5cf6', '#ef4444'], borderWidth: 2, borderColor: '#ffffff' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
+      });
+
+      charts.c3 = new Chart(document.getElementById('chartCompleteness').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['EmailAddress', 'PersonPhone (Masked)', 'Billing Address', 'XML BirthDate', 'XML TotalPurchaseYTD', 'XML YearlyIncome', 'XML Education'],
+          datasets: [{ label: 'Completeness (%)', data: [99.4, 97.8, 94.6, 91.2, 88.5, 84.1, 86.9], backgroundColor: ['#10b981', '#10b981', '#0ea5e9', '#0ea5e9', '#f59e0b', '#f59e0b', '#f59e0b'], borderRadius: 3 }]
+        },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { min: 0, max: 100, grid: { color: '#f4f4f5' } }, y: { grid: { display: false } } } }
+      });
+
+      charts.cReports = new Chart(document.getElementById('chartReportsUsage').getContext('2d'), {
+        type: 'bar',
+        data: { labels: ['Customer Profile', 'Sales', 'Revenue & Loss', 'Cost'], datasets: [{ label: 'Views', data: [77, 24, 15, 12], backgroundColor: ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b'], borderRadius: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f4f4f5' } } } }
+      });
+
+      charts.cRevLoss = new Chart(document.getElementById('chartRevLossTrend').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: ['2011', '2012', '2013', '2014 (YTD)'],
+          datasets: [
+            { label: 'Net Sales ($M)', data: [12.64, 33.52, 43.62, 20.07], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', tension: 0.3, fill: true },
+            { label: 'Standard COGS ($M)', data: [11.12, 29.68, 38.65, 17.81], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.08)', tension: 0.3, fill: true }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f4f4f5' } } } }
+      });
+
+      charts.cProducts = new Chart(document.getElementById('chartProductsCategory').getContext('2d'), {
+        type: 'bar',
+        data: { labels: ['Bikes', 'Components', 'Clothing', 'Accessories'], datasets: [{ label: 'Revenue ($M)', data: [86.01, 11.79, 2.12, 1.27], backgroundColor: ['#2563eb', '#8b5cf6', '#0ea5e9', '#10b981'], borderRadius: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f4f4f5' } } } }
+      });
+
+      charts.cCustomers = new Chart(document.getElementById('chartCustomersSegments').getContext('2d'), {
+        type: 'bar',
+        data: { labels: ['Individual Retail (IN)', 'Commercial Stores (SC)'], datasets: [{ label: 'Accounts', data: [18484, 1336], backgroundColor: ['#2563eb', '#10b981'], borderRadius: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f4f4f5' } } } }
+      });
+
+      charts.cTerrSales = new Chart(document.getElementById('chartTerritorySales').getContext('2d'), {
+        type: 'bar',
+        data: { labels: ['Southwest', 'Canada', 'Northwest', 'Australia', 'UK', 'Germany', 'France', 'Southeast'], datasets: [{ label: 'Sales ($M)', data: [24.18, 16.36, 16.08, 10.66, 7.67, 4.91, 4.61, 7.88], backgroundColor: '#2563eb', borderRadius: 3 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#f4f4f5' } }, y: { grid: { display: false } } } }
+      });
+
+      charts.cRegContrib = new Chart(document.getElementById('chartRegionalContribution').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: ['North America (71.5%)', 'Europe (17.9%)', 'Pacific (10.6%)'], datasets: [{ data: [71.5, 17.9, 10.6], backgroundColor: ['#2563eb', '#0ea5e9', '#10b981'], borderWidth: 2, borderColor: '#ffffff' }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    const ALL_VIEWS = ['dashboard', 'reports', 'revenue_loss', 'products', 'customers', 'territories', 'rbac_audit'];
+    const TITLES = {
+      dashboard: 'Data Governance dashboard',
+      reports: 'Reports',
+      revenue_loss: 'Revenue & loss',
+      products: 'Products',
+      customers: 'Customers',
+      territories: 'Sales territories',
+      rbac_audit: 'RBAC & Audit Logs'
+    };
+
+    function switchNav(mod) {
+      const r = ROLES[state.role];
+      if (!r.allowed.includes(mod)) {
+        openDeniedModal('Cross-Department Access Denied', `GET /${mod}/`, `Role "${r.name}" is restricted from viewing "${TITLES[mod]}" per the DATAOPT Finals RBAC policy. Switch to Administrator or Manager in the top-right to inspect all pages.`);
+        return;
+      }
+
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.className = b.dataset.module === mod
+          ? 'nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold bg-zinc-900 text-white transition'
+          : 'nav-btn w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition';
+      });
+
+      ALL_VIEWS.forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+      document.getElementById(`view-${mod}`).classList.remove('hidden');
+      document.getElementById('breadcrumbCurrent').textContent = TITLES[mod];
+      addLog(`GET /${mod}/`, 'ALLOWED (200)', `Navigated to ${TITLES[mod]}`);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initAllCharts();
+      renderLogs();
+
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => btn.addEventListener('click', toggleTheme));
+      try { if (localStorage.getItem('aw_theme') === 'dark') toggleTheme(); } catch (e) {}
+
+      document.getElementById('loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        state.role = document.getElementById('loginRoleSelect').value;
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appShell').classList.remove('hidden');
+        syncRoleUI();
+        updateDashboard();
+        switchNav('dashboard');
+      });
+
+      document.getElementById('btnLogout').addEventListener('click', () => {
+        document.getElementById('appShell').classList.add('hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+      });
+
+      document.getElementById('loginRoleSelect').addEventListener('change', (e) => {
+        const map = { governance: 'governance@adventureworks.com', admin: 'admin@adventureworks.com', manager: 'manager@adventureworks.com', supervisor: 'supervisor@adventureworks.com', employee: 'employee@adventureworks.com' };
+        document.getElementById('loginEmail').value = map[e.target.value];
+      });
+
+      document.getElementById('headerRoleSwitcher').addEventListener('change', (e) => {
+        state.role = e.target.value;
+        syncRoleUI();
+        switchNav('dashboard');
+      });
+
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchNav(btn.dataset.module)));
+      document.getElementById('filterTerritory').addEventListener('change', (e) => { state.territory = e.target.value; updateDashboard(); });
+      document.getElementById('filterSegment').addEventListener('change', (e) => { state.segment = e.target.value; updateDashboard(); });
+      document.getElementById('filterStatus').addEventListener('change', (e) => { state.status = e.target.value; updateDashboard(); });
+      document.getElementById('filterSearch').addEventListener('input', (e) => { state.search = e.target.value; renderTable(); });
+      document.getElementById('btnResetFilters').addEventListener('click', () => {
+        state.territory = 'ALL'; state.segment = 'ALL'; state.status = 'ALL'; state.search = '';
+        document.getElementById('filterTerritory').value = 'ALL';
+        document.getElementById('filterSegment').value = 'ALL';
+        document.getElementById('filterStatus').value = 'ALL';
+        document.getElementById('filterSearch').value = '';
+        updateDashboard();
+      });
+
+      document.getElementById('btnTestDbDelete').addEventListener('click', () => {
+        openDeniedModal('Source Database Read-Only Lock', 'DELETE FROM Sales.Customer', 'AdventureWorks2019 connection is strictly read-only. All roles are prohibited from modifying source records.');
+      });
+      document.getElementById('btnSimulateDenied').addEventListener('click', () => {
+        openDeniedModal('Simulated 403 Forbidden', 'GET /cost/', 'Backend RBAC decorator @require_module_access blocked unauthorized access.');
+      });
+      document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('deniedModal').classList.add('hidden'));
+      document.getElementById('btnHeaderSearchFocus').addEventListener('click', () => { switchNav('dashboard'); document.getElementById('filterSearch').focus(); });
+      document.getElementById('btnHeaderAuditBell').addEventListener('click', () => switchNav('rbac_audit'));
+
+      document.querySelectorAll('.export-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!ROLES[state.role].canExport) {
+            openDeniedModal('Export Restricted', 'GET /export/', 'Employee role cannot export reports.');
+            return;
+          }
+          const csv = ['Account,MaskedName,MaskedPhone,Segment,Territory,Orders,XmlScore,Status']
+            .concat(CUSTOMERS.map(c => `${c.account},"${c.name}","${c.phone}",${c.seg},"${c.territory}",${c.orders},${c.xml}%,${c.status}`)).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'adventureworks_governance_masked.csv';
+          a.click();
+          addLog('GET /export/', 'ALLOWED (200)', 'Exported PII-masked CSV');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
