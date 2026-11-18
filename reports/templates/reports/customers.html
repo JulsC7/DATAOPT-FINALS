@@ -1,35 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Customer Profiles</title>
-    <style>
-        table { border-collapse: collapse; width: 50%; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-    </style>
-</head>
-<body>
-    <h1>Module 2: Active Customer Distribution</h1>
+{% extends 'reports/base.html' %}
+{% block title %}Customer Profiles | AdventureWorks{% endblock %}
+{% block breadcrumb %}Module 2: Active Customer Distribution{% endblock %}
 
-    <table>
-        <tr>
-            <th>Territory Name</th>
-            <th>Country Code</th>
-            <th>Active Customers</th>
-        </tr>
-        <!-- This loop unpacks the 'active_customers' dictionary from views.py -->
-        {% for row in active_customers %}
-        <tr>
-            <td>{{ row.TerritoryName }}</td>
-            <td>{{ row.CountryRegionCode }}</td>
-            <td>{{ row.ActiveCustomerCount }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">No customer data found.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+{% block content %}
+<!-- Chart Card -->
+<div class="bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Active Customers by Sales Territory</h3>
+    <div class="h-72"><canvas id="customersChart"></canvas></div>
+</div>
+
+<!-- Customer Distribution Table -->
+<div class="bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-[#2a2a2a]">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Territory Customer Distribution</h3>
+    </div>
+    <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-[#121212] uppercase text-slate-500 sticky top-0">
+                <tr>
+                    <th class="py-3 px-6">Territory Name</th>
+                    <th class="py-3 px-6">Country Code</th>
+                    <th class="py-3 px-6">Active Customers</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-[#2a2a2a]">
+                <!-- Unpacks friend's exact 'active_customers' query result from views.py -->
+                {% for row in active_customers %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-[#2a2a2a]/30">
+                    <td class="py-2.5 px-6 font-medium">{{ row.TerritoryName }}</td>
+                    <td class="py-2.5 px-6"><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono">{{ row.CountryRegionCode }}</span></td>
+                    <td class="py-2.5 px-6 font-mono font-semibold">{{ row.ActiveCustomerCount }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="py-6 px-6 text-center text-slate-500">No customer data found. Check your database connection.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const isDark = document.documentElement.classList.contains('dark');
+    new Chart(document.getElementById('customersChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Active Customers',
+                data: {{ chart_values|safe }},
+                backgroundColor: '#10b981',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } },
+                y: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } }
+            }
+        }
+    });
+</script>
+{% endblock %}

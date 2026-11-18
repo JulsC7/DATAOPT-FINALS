@@ -1,10 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'reports/base.html' %}
+{% block title %}Products Cost Report | AdventureWorks{% endblock %}
+{% block breadcrumb %}Module 4: Production Cost Report{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Standard Cost vs. List Price Comparison</h3>
+    <div class="h-72"><canvas id="costChart"></canvas></div>
+</div>
+
+<div class="bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-[#2a2a2a]">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Production Cost & Margin Breakdown</h3>
+    </div>
+    <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-[#121212] uppercase text-slate-500 sticky top-0">
+                <tr>
+                    <th class="py-3 px-6">Product Name</th>
+                    <th class="py-3 px-6">SKU Number</th>
+                    <th class="py-3 px-6">Standard Cost ($)</th>
+                    <th class="py-3 px-6">List Price ($)</th>
+                    <th class="py-3 px-6">Unit Margin ($)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-[#2a2a2a]">
+                {% for row in cost_data %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-[#2a2a2a]/30">
+                    <td class="py-2.5 px-6 font-medium">{{ row.ProductName }}</td>
+                    <td class="py-2.5 px-6 font-mono text-slate-400">{{ row.ProductNumber }}</td>
+                    <td class="py-2.5 px-6 font-mono text-amber-600 dark:text-amber-400">${{ row.StandardCost }}</td>
+                    <td class="py-2.5 px-6 font-mono text-blue-600 dark:text-blue-400">${{ row.ListPrice }}</td>
+                    <td class="py-2.5 px-6 font-mono text-emerald-600 dark:text-emerald-400">+${{ row.UnitMargin }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="py-6 px-6 text-center text-slate-500">No cost records found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const isDark = document.documentElement.classList.contains('dark');
+    new Chart(document.getElementById('costChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [
+                { label: 'Standard Cost ($)', data: {{ chart_cost|safe }}, backgroundColor: '#f59e0b' },
+                { label: 'List Price ($)', data: {{ chart_price|safe }}, backgroundColor: '#3b82f6' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } },
+                y: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } }
+            }
+        }
+    });
+</script>
+{% endblock %}

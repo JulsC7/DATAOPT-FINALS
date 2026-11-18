@@ -1,0 +1,16 @@
+{% extends 'reports/base.html' %}
+{% block title %}Reports Catalog | DATAOPT{% endblock %}
+{% block header_title %}AdventureWorks2019 Verified Reports Catalog{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+    <h3 class="text-sm font-semibold">Standardized SQL Views & Reporting Endpoints</h3>
+    <p class="text-xs text-slate-400">All modules execute read-only T-SQL queries against AdventureWorks2019 in compliance with role-based data governance policies.</p>
+    <ul class="text-xs space-y-2 list-disc list-inside text-slate-300">
+        <li><strong>Module 1 (`/sales/`):</strong> Monthly aggregation over <code>Sales.SalesOrderHeader</code></li>
+        <li><strong>Module 2 (`/customers/` & `/territories/`):</strong> Customer counts joined across <code>Sales.Customer</code> and <code>Sales.SalesTerritory</code></li>
+        <li><strong>Module 3 (`/revenue/`):</strong> Promotional discount impact over <code>Sales.SalesOrderDetail</code></li>
+        <li><strong>Module 4 (`/cost/`):</strong> Standard cost vs. list price analysis on <code>Production.Product</code></li>
+    </ul>
+</div>
+{% endblock %}

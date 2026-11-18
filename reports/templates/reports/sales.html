@@ -1,35 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Sales Dashboard</title>
-    <style>
-        table { border-collapse: collapse; width: 50%; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-    </style>
-</head>
-<body>
-    <h1>Module 1: Total Sales Trends</h1>
+{% extends 'reports/base.html' %}
+{% block title %}Sales Dashboard | AdventureWorks{% endblock %}
+{% block breadcrumb %}Module 1: Total Sales Trends{% endblock %}
 
-    <table>
-        <tr>
-            <th>Sales Year</th>
-            <th>Sales Month</th>
-            <th>Total Sales ($)</th>
-        </tr>
-        <!-- This loop unpacks the 'sales_trends' dictionary from views.py -->
-        {% for row in sales_trends %}
-        <tr>
-            <td>{{ row.SalesYear }}</td>
-            <td>{{ row.SalesMonth }}</td>
-            <td>{{ row.TotalSales }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">No sales data found. Check your database connection.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Interactive Chart Card -->
+    <div class="lg:col-span-2 bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Monthly Revenue Trajectory (Sales.SalesOrderHeader)</h3>
+        <div class="h-72"><canvas id="salesChart"></canvas></div>
+    </div>
+
+    <!-- Data Lineage & Metadata Card -->
+    <div class="bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Data Lineage & Silo</h3>
+        <p class="text-xs text-slate-600 dark:text-slate-400">Aggregates gross revenue by order year and month directly from AdventureWorks2019.</p>
+        <div class="text-xs space-y-1.5 pt-2 border-t border-slate-200 dark:border-[#2a2a2a]">
+            <div><span class="text-slate-500">Source Table:</span> <code class="text-blue-600 dark:text-blue-400">Sales.SalesOrderHeader</code></div>
+            <div><span class="text-slate-500">Metric Column:</span> <code class="text-blue-600 dark:text-blue-400">SUM(TotalDue)</code></div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Breakdown Data Table -->
+<div class="bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-[#2a2a2a]">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Monthly Sales Breakdown ({{ sales_trends|length }} Periods)</h3>
+    </div>
+    <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-[#121212] uppercase text-slate-500 sticky top-0">
+                <tr>
+                    <th class="py-3 px-6">Sales Year</th>
+                    <th class="py-3 px-6">Sales Month</th>
+                    <th class="py-3 px-6">Total Sales ($)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-[#2a2a2a]">
+                <!-- Unpacks friend's exact 'sales_trends' query result from views.py -->
+                {% for row in sales_trends %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-[#2a2a2a]/30">
+                    <td class="py-2.5 px-6 font-medium">{{ row.SalesYear }}</td>
+                    <td class="py-2.5 px-6">{{ row.SalesMonth }}</td>
+                    <td class="py-2.5 px-6 font-mono text-emerald-600 dark:text-emerald-400">${{ row.TotalSales }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="py-6 px-6 text-center text-slate-500">No sales data found. Check your database connection.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const isDark = document.documentElement.classList.contains('dark');
+    new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Total Sales ($)',
+                data: {{ chart_values|safe }},
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } },
+                y: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } }
+            }
+        }
+    });
+</script>
+{% endblock %}
