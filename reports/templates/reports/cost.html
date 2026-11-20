@@ -1,39 +1,196 @@
 {% extends 'reports/base.html' %}
-{% block title %}Products Cost Report | AdventureWorks{% endblock %}
-{% block breadcrumb %}Module 4: Production Cost Report{% endblock %}
+{% block title %}Products | AdventureWorks{% endblock %}
+{% block breadcrumb %}Products{% endblock %}
 
 {% block content %}
-<div class="bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm">
-    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Standard Cost vs. List Price Comparison</h3>
-    <div class="h-72"><canvas id="costChart"></canvas></div>
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-950 dark:text-white">Products</h1>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Product cost, list price, and margin comparison by selected countries and years.
+        </p>
+    </div>
+
+    <div class="flex gap-3">
+        <a href="{% url 'export_report' 'cost' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+            Export CSV
+        </a>
+        <a href="{% url 'export_report' 'cost' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+            Export PDF
+        </a>
+    </div>
 </div>
 
-<div class="bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 dark:border-[#2a2a2a]">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Production Cost & Margin Breakdown</h3>
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <form method="GET" class="p-4 flex flex-col xl:flex-row xl:items-end gap-4">
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Year / Years
+            </label>
+
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>{% if selected_years %}{{ selected_years|length }} selected{% else %}All Years{% endif %}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for year in available_years %}
+                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ year }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No years available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Country / Countries
+            </label>
+
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>{% if selected_countries %}{{ selected_countries|length }} selected{% else %}All Countries{% endif %}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for country in countries %}
+                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ country.name }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No countries available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+<div class="relative w-full xl:w-56">
+    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+        Category / Categories
+    </label>
+
+    <button type="button" onclick="toggleDropdown('categoriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+        <span>
+            {% if selected_categories %}
+                {{ selected_categories|length }} selected
+            {% else %}
+                All Categories
+            {% endif %}
+        </span>
+        <span class="text-slate-400">▾</span>
+    </button>
+
+    <div id="categoriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+        <div class="p-2 space-y-1">
+            {% for category in categories %}
+            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                <input
+                    type="checkbox"
+                    name="categories"
+                    value="{{ category.ProductCategoryID }}"
+                    {% if category.ProductCategoryID|stringformat:"s" in selected_categories %}checked{% endif %}
+                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                <span>{{ category.Name }}</span>
+            </label>
+            {% empty %}
+            <div class="px-2 py-2 text-sm text-slate-500">No categories available</div>
+            {% endfor %}
+        </div>
     </div>
+</div>
+
+        <div class="w-full xl:w-56">
+            <label for="search" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Search
+            </label>
+            <input id="search" name="search" value="{{ search_query }}" placeholder="Product name or number" class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
+        </div>
+
+        <div class="w-full xl:w-44">
+            <label for="min_margin" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Min Margin
+            </label>
+            <input id="min_margin" name="min_margin" value="{{ min_margin }}" placeholder="Example: 100" class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
+        </div>
+
+        <div class="flex gap-3">
+            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                Apply
+            </button>
+            <a href="{% url 'cost' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Product Cost Chart
+        </h3>
+
+        <div class="flex items-center gap-2">
+            <label for="costChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Chart Type
+            </label>
+            <select id="costChartType" onchange="changeCostChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                <option value="bar">Bar</option>
+                <option value="line">Line</option>
+                <option value="doughnut">Doughnut</option>
+                <option value="polarArea">Polar Area</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="h-80">
+        <canvas id="costChart"></canvas>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Product Cost Breakdown
+        </h3>
+    </div>
+
     <div class="overflow-x-auto max-h-96">
         <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-[#121212] uppercase text-slate-500 sticky top-0">
+            <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
                 <tr>
-                    <th class="py-3 px-6">Product Name</th>
-                    <th class="py-3 px-6">SKU Number</th>
-                    <th class="py-3 px-6">Standard Cost ($)</th>
-                    <th class="py-3 px-6">List Price ($)</th>
-                    <th class="py-3 px-6">Unit Margin ($)</th>
+                    <th class="py-3 px-6">Product</th>
+                    <th class="py-3 px-6">Product No.</th>
+                    <th class="py-3 px-6">Category</th>
+                    <th class="py-3 px-6">Standard Cost</th>
+                    <th class="py-3 px-6">List Price</th>
+                    <th class="py-3 px-6">Unit Margin</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-[#2a2a2a]">
+
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                 {% for row in cost_data %}
-                <tr class="hover:bg-slate-50 dark:hover:bg-[#2a2a2a]/30">
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                     <td class="py-2.5 px-6 font-medium">{{ row.ProductName }}</td>
-                    <td class="py-2.5 px-6 font-mono text-slate-400">{{ row.ProductNumber }}</td>
-                    <td class="py-2.5 px-6 font-mono text-amber-600 dark:text-amber-400">${{ row.StandardCost }}</td>
-                    <td class="py-2.5 px-6 font-mono text-blue-600 dark:text-blue-400">${{ row.ListPrice }}</td>
-                    <td class="py-2.5 px-6 font-mono text-emerald-600 dark:text-emerald-400">+${{ row.UnitMargin }}</td>
+                    <td class="py-2.5 px-6 font-mono">{{ row.ProductNumber }}</td>
+                    <td class="py-2.5 px-6">{{ row.CategoryName }}</td>
+                    <td class="py-2.5 px-6 font-mono text-rose-700 dark:text-rose-300">${{ row.StandardCostDisplay }}</td>
+                    <td class="py-2.5 px-6 font-mono text-blue-700 dark:text-blue-300">${{ row.ListPriceDisplay }}</td>
+                    <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.UnitMarginDisplay }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5" class="py-6 px-6 text-center text-slate-500">No cost records found.</td></tr>
+                <tr>
+                    <td colspan="6" class="py-6 px-6 text-center text-slate-500">
+                        No product data found.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -41,24 +198,123 @@
 </div>
 
 <script>
-    const isDark = document.documentElement.classList.contains('dark');
-    new Chart(document.getElementById('costChart'), {
-        type: 'bar',
-        data: {
-            labels: {{ chart_labels|safe }},
-            datasets: [
-                { label: 'Standard Cost ($)', data: {{ chart_cost|safe }}, backgroundColor: '#f59e0b' },
-                { label: 'List Price ($)', data: {{ chart_price|safe }}, backgroundColor: '#3b82f6' }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } },
-                y: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } }
+    const pageIsDark = document.documentElement.classList.contains('dark');
+    const axisColor = pageIsDark ? '#cbd5e1' : '#475569';
+    const gridColor = pageIsDark ? 'rgba(148, 163, 184, 0.18)' : '#e2e8f0';
+    const palette = pageIsDark
+        ? ['#60a5fa', '#34d399', '#fbbf24', '#fb7185', '#a78bfa', '#22d3ee', '#a3e635', '#fdba74']
+        : ['#2563eb', '#059669', '#d97706', '#e11d48', '#7c3aed', '#0891b2', '#65a30d', '#ea580c'];
+
+    let costChartInstance;
+
+    const costLabels = {{ chart_labels|default:"[]"|safe }};
+    const costValues = {{ chart_cost|default:"[]"|safe }};
+    const priceValues = {{ chart_price|default:"[]"|safe }};
+    const marginValues = {{ chart_margin|default:"[]"|safe }};
+
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+            if (menu.id !== dropdownId) {
+                menu.classList.add('hidden');
             }
+        });
+        dropdown.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const clickedInsideDropdown = event.target.closest('[id$="Dropdown"]');
+        const clickedDropdownButton = event.target.closest('button[onclick^="toggleDropdown"]');
+
+        if (!clickedInsideDropdown && !clickedDropdownButton) {
+            document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+                menu.classList.add('hidden');
+            });
         }
     });
+
+    function renderCostChart(type) {
+        const canvas = document.getElementById('costChart');
+
+        if (costChartInstance) {
+            costChartInstance.destroy();
+        }
+
+        const isCircular = type === 'doughnut' || type === 'polarArea';
+
+        costChartInstance = new Chart(canvas, {
+            type: type,
+            data: {
+                labels: costLabels,
+                datasets: isCircular
+                    ? [{
+                        label: 'Unit Margin ($)',
+                        data: marginValues,
+                        backgroundColor: palette
+                    }]
+                    : [
+                        {
+                            label: 'Standard Cost ($)',
+                            data: costValues,
+                            backgroundColor: type === 'line' ? 'rgba(225, 29, 72, 0.12)' : (pageIsDark ? '#fb7185' : '#e11d48'),
+                            borderColor: pageIsDark ? '#fb7185' : '#e11d48',
+                            fill: type === 'line',
+                            tension: type === 'line' ? 0.15 : 0,
+                            pointRadius: type === 'line' ? 4 : 3
+                        },
+                        {
+                            label: 'List Price ($)',
+                            data: priceValues,
+                            backgroundColor: type === 'line' ? 'rgba(37, 99, 235, 0.12)' : (pageIsDark ? '#60a5fa' : '#2563eb'),
+                            borderColor: pageIsDark ? '#60a5fa' : '#2563eb',
+                            fill: type === 'line',
+                            tension: type === 'line' ? 0.15 : 0,
+                            pointRadius: type === 'line' ? 4 : 3
+                        },
+                        {
+                            label: 'Unit Margin ($)',
+                            data: marginValues,
+                            backgroundColor: type === 'line' ? 'rgba(5, 150, 105, 0.12)' : (pageIsDark ? '#34d399' : '#059669'),
+                            borderColor: pageIsDark ? '#34d399' : '#059669',
+                            fill: type === 'line',
+                            tension: type === 'line' ? 0.15 : 0,
+                            pointRadius: type === 'line' ? 4 : 3
+                        }
+                    ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: isCircular ? {} : {
+                    x: {
+                        type: 'category',
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: axisColor,
+                            callback: function(value) {
+                                return '$' + Number(value).toLocaleString();
+                            }
+                        },
+                        grid: { color: gridColor }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: axisColor }
+                    }
+                }
+            }
+        });
+    }
+
+    function changeCostChartType() {
+        renderCostChart(document.getElementById('costChartType').value);
+    }
+
+    renderCostChart('bar');
 </script>
 {% endblock %}

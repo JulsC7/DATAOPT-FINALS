@@ -1,141 +1,199 @@
 <!DOCTYPE html>
-<html lang="en" class="dark" id="html-root">
+<html lang="en" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AdventureWorks BI Workspace{% endblock %}</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        darkbg: '#121212',
-                        sidebarbg: '#181818',
-                        cardbg: '#1a1a1a',
-                        bordercol: '#2a2a2a',
+                        darkbg: '#0f172a',
+                        sidebarbg: '#111827',
+                        cardbg: '#1e293b',
+                        bordercol: '#334155',
                     }
                 }
             }
         }
     </script>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-200 min-h-screen flex font-sans antialiased transition-colors duration-200">
 
-    <!-- Sidebar -->
+<body class="bg-slate-100 dark:bg-darkbg text-slate-800 dark:text-slate-100 min-h-screen flex font-sans antialiased transition-colors duration-200">
+
     <aside class="w-64 bg-white dark:bg-sidebarbg border-r border-slate-200 dark:border-bordercol flex flex-col justify-between shrink-0 select-none">
         <div>
             <div class="p-5 border-b border-slate-200 dark:border-bordercol flex items-center gap-3">
-                <div class="w-7 h-7 bg-blue-600 text-white rounded flex items-center justify-center font-bold text-xs">AW</div>
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xs">
+                    AW
+                </div>
+
                 <div>
-                    <h1 class="font-bold text-xs tracking-wide dark:text-white">AdventureWorks</h1>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 tracking-wider uppercase">BI Workspace</p>
+                    <h1 class="font-bold text-sm tracking-wide text-slate-900 dark:text-white">
+                        AdventureWorks
+                    </h1>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 tracking-wider uppercase">
+                        BI Workspace
+                    </p>
                 </div>
             </div>
 
             <nav class="py-3 px-2 space-y-1 text-xs font-medium">
-                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-3 py-2.5 rounded {% if active_page == 'dashboard' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span>Dashboard</span>
-                </a>
-
-                <a href="{% url 'reports_library' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'reports_library' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Reports</span>
+                <a href="{% url 'dashboard' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'dashboard' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        Dashboard
+                    </span>
                     <span class="text-emerald-500">✓</span>
                 </a>
 
-                <a href="{% url 'revenue' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'revenue' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Revenue & Loss</span>
+                <a href="{% url 'revenue' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'revenue' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        Revenue & Loss
+                    </span>
                     <span class="text-emerald-500">✓</span>
                 </a>
 
-                <a href="{% url 'cost' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'cost' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Products</span>
+                <a href="{% url 'cost' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'cost' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        Products
+                    </span>
                     <span class="text-emerald-500">✓</span>
                 </a>
 
-                <a href="{% url 'customers' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'customers' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Customers</span>
+                <a href="{% url 'customers' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'customers' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        Customers
+                    </span>
                     <span class="text-emerald-500">✓</span>
                 </a>
 
-                <a href="{% url 'territories' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'territories' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Sales Territories</span>
+                <a href="{% url 'sales' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'sales' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        Sales
+                    </span>
                     <span class="text-emerald-500">✓</span>
                 </a>
 
-                <!-- Added Sales Trends Link -->
-                <a href="{% url 'sales' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'sales' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Sales Trends</span>
+                <div class="pt-4 pb-1 px-3 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                    Governance & Audit
+                </div>
+
+                <a href="{% url 'rbac_audit' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'rbac_audit' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        RBAC & Audit Logs
+                    </span>
                     <span class="text-emerald-500">✓</span>
-                </a>
-
-                <div class="pt-4 pb-1 px-3 text-[10px] uppercase tracking-wider text-slate-500 font-bold">Governance & Audit</div>
-
-                <a href="{% url 'rbac_audit' %}" class="flex items-center justify-between px-3 py-2.5 rounded {% if active_page == 'rbac_audit' %}bg-slate-200 dark:bg-bordercol dark:text-white font-semibold{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-bordercol/50{% endif %}">
-                    <span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>RBAC & Audit Logs</span>
-                    <span class="px-1.5 py-0.2 bg-slate-200 dark:bg-bordercol text-[10px] rounded text-slate-700 dark:text-slate-300">10</span>
                 </a>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-200 dark:border-bordercol text-[11px] space-y-2">
-            <div class="text-slate-600 dark:text-slate-400">Role: <strong class="dark:text-white">{{ role_title }}</strong></div>
-            <a href="{% url 'logout' %}" class="block text-center py-1.5 px-2 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 font-medium transition">
-                Switch Role / Logout ({{ username }})
+        <div class="p-4 border-t border-slate-200 dark:border-bordercol text-[11px] space-y-3">
+            <div class="flex items-center gap-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
+                <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                    {{ initials }}
+                </div>
+
+                <div class="min-w-0">
+                    <div class="font-semibold text-slate-900 dark:text-white truncate">
+                        {{ username }}
+                    </div>
+                    <div class="text-slate-500 dark:text-slate-400 truncate">
+                        {{ role_title }}
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'logout' %}" class="block text-center py-1.5 px-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20 font-medium transition">
+                Logout
             </a>
         </div>
     </aside>
 
-    <!-- Main Workspace -->
     <main class="flex-1 flex flex-col min-w-0">
-        <!-- Top Navbar with Functional Theme Toggle -->
         <header class="h-14 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-6 flex items-center justify-between text-xs">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
-                <span class="dark:text-white tracking-wider font-semibold">ADVENTUREWORKS BI</span>
+                <span class="text-slate-900 dark:text-white tracking-wider font-semibold">
+                    ADVENTUREWORKS BI
+                </span>
                 <span>/</span>
-                <span class="text-slate-700 dark:text-slate-300">{% block breadcrumb %}Data Governance dashboard{% endblock %}</span>
+                <span class="text-slate-700 dark:text-slate-300">
+                    {% block breadcrumb %}Data Governance dashboard{% endblock %}
+                </span>
             </div>
 
             <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 bg-slate-100 dark:bg-darkbg border border-slate-200 dark:border-bordercol px-3 py-1 rounded text-slate-700 dark:text-slate-300">
-                    <span>Role: Governance</span>
+                <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                        {{ initials }}
+                    </span>
+                    <div class="leading-tight">
+                        <div class="font-semibold text-slate-900 dark:text-white">
+                            {{ username }}
+                        </div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400">
+                            {{ role_title }}
+                        </div>
+                    </div>
                 </div>
-                <!-- Clickable Theme Toggle Button -->
-                <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-2 bg-slate-100 dark:bg-darkbg border border-slate-200 dark:border-bordercol px-3 py-1.5 rounded text-slate-700 dark:text-slate-300 hover:border-blue-500 transition font-medium">
+
+                <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:border-blue-500 transition font-medium">
                     <span class="w-2 h-2 rounded-full bg-emerald-400" id="theme-indicator"></span>
-                    <span id="theme-text">Dark Mode</span>
+                    <span id="theme-text">Light Mode</span>
                 </button>
             </div>
         </header>
 
         <div class="p-8 space-y-6 overflow-y-auto">
+            {% if db_warning %}
+                <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-100" role="alert">
+                    <strong>Database warning:</strong> {{ db_warning }}
+                </div>
+            {% endif %}
+
             {% block content %}{% endblock %}
         </div>
     </main>
 
     <script>
-        // Check saved theme preference
-        if (localStorage.getItem('theme') === 'light') {
-            document.getElementById('html-root').classList.remove('dark');
-            document.getElementById('theme-text').innerText = 'Light Mode';
-        }
+        const savedTheme = localStorage.getItem('theme');
+        const root = document.getElementById('html-root');
+        const themeText = document.getElementById('theme-text');
+        const themeIndicator = document.getElementById('theme-indicator');
 
-        function toggleTheme() {
-            const root = document.getElementById('html-root');
-            const text = document.getElementById('theme-text');
-            root.classList.toggle('dark');
-
-            if (root.classList.contains('dark')) {
-                text.innerText = 'Dark Mode';
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                root.classList.add('dark');
+                themeText.innerText = 'Dark Mode';
+                themeIndicator.classList.remove('bg-yellow-400');
+                themeIndicator.classList.add('bg-emerald-400');
                 localStorage.setItem('theme', 'dark');
             } else {
-                text.innerText = 'Light Mode';
+                root.classList.remove('dark');
+                themeText.innerText = 'Light Mode';
+                themeIndicator.classList.remove('bg-emerald-400');
+                themeIndicator.classList.add('bg-yellow-400');
                 localStorage.setItem('theme', 'light');
             }
         }
+
+        function toggleTheme() {
+            const nextTheme = root.classList.contains('dark') ? 'light' : 'dark';
+            applyTheme(nextTheme);
+        }
+
+        applyTheme(savedTheme || 'light');
     </script>
 </body>
 </html>

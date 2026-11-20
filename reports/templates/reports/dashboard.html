@@ -1,63 +1,342 @@
 {% extends 'reports/base.html' %}
-{% block title %}Sales Dashboard | AdventureWorks{% endblock %}
-{% block breadcrumb %}Module 1: Total Sales Trends{% endblock %}
+{% block title %}Executive Dashboard | AdventureWorks{% endblock %}
+{% block breadcrumb %}Executive Overview{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Monthly Revenue Trajectory (Sales.SalesOrderHeader)</h3>
-        <div class="h-72"><canvas id="salesChart"></canvas></div>
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-950 dark:text-white">
+            Executive Dashboard
+        </h1>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            High-level revenue, customer, country, and order performance overview.
+        </p>
     </div>
-    <div class="bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm space-y-3">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Data Lineage & Silo</h3>
-        <p class="text-xs text-slate-600 dark:text-slate-400">Aggregates gross revenue by order year and month directly from AdventureWorks2019.</p>
-        <div class="text-xs space-y-1.5 pt-2 border-t border-slate-200 dark:border-[#2a2a2a]">
-            <div><span class="text-slate-500">Source Table:</span> <code class="text-blue-600 dark:text-blue-400">Sales.SalesOrderHeader</code></div>
-            <div><span class="text-slate-500">Metric Column:</span> <code class="text-blue-600 dark:text-blue-400">SUM(TotalDue)</code></div>
+
+    <div class="flex gap-3">
+        <a href="{% url 'export_report' 'dashboard' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+            Export CSV
+        </a>
+        <a href="{% url 'export_report' 'dashboard' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+            Export PDF
+        </a>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <form method="GET" class="p-4 flex flex-col lg:flex-row lg:items-end gap-4">
+        <div class="relative w-full lg:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Year / Years
+            </label>
+
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>
+                    {% if selected_years %}
+                        {{ selected_years|length }} selected
+                    {% else %}
+                        All Years
+                    {% endif %}
+                </span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for year in available_years %}
+                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ year }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No years available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative w-full lg:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Country / Countries
+            </label>
+
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>
+                    {% if selected_countries %}
+                        {{ selected_countries|length }} selected
+                    {% else %}
+                        All Countries
+                    {% endif %}
+                </span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for country in countries %}
+                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ country.name }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No countries available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                Apply
+            </button>
+
+            <a href="{% url 'dashboard' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Revenue</p>
+        <h2 class="mt-3 text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+            ${{ kpi.total_revenue_display|default:"0.00" }}
+        </h2>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Filtered gross sales revenue</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Orders</p>
+        <h2 class="mt-3 text-2xl font-bold text-blue-700 dark:text-blue-300">
+            {{ kpi.total_orders_display|default:"0" }}
+        </h2>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Sales order records</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active Customers</p>
+        <h2 class="mt-3 text-2xl font-bold text-violet-700 dark:text-violet-300">
+            {{ kpi.active_customers_display|default:"0" }}
+        </h2>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Unique customer accounts</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Countries</p>
+        <h2 class="mt-3 text-2xl font-bold text-amber-700 dark:text-amber-300">
+            {{ kpi.countries_display|default:"0" }}
+        </h2>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Countries represented in sales</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Average Order Value</p>
+        <h2 class="mt-3 text-2xl font-bold text-cyan-700 dark:text-cyan-300">
+            ${{ kpi.avg_order_value_display|default:"0.00" }}
+        </h2>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Average revenue per order</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Online Orders</p>
+        <h2 class="mt-3 text-2xl font-bold text-rose-700 dark:text-rose-300">
+            {{ kpi.online_orders_display|default:"0" }}
+        </h2>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Orders placed through online channel</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+            Revenue by Country
+        </h3>
+        <div class="h-72">
+            <canvas id="countryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+            Revenue by Year
+        </h3>
+        <div class="h-72">
+            <canvas id="yearChart"></canvas>
         </div>
     </div>
 </div>
 
-<div class="bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 dark:border-[#2a2a2a]">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Monthly Sales Breakdown ({{ sales_trends|length }} Periods)</h3>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Country Revenue Breakdown
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+                    <tr>
+                        <th class="py-3 px-6">Country</th>
+                        <th class="py-3 px-6">Orders</th>
+                        <th class="py-3 px-6">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in revenue_by_country %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-2.5 px-6 font-medium">{{ row.CountryName }}</td>
+                        <td class="py-2.5 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalRevenueDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="py-6 px-6 text-center text-slate-500">No country data found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="overflow-x-auto max-h-96">
-        <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-[#121212] uppercase text-slate-500 sticky top-0">
-                <tr>
-                    <th class="py-3 px-6">Sales Year</th>
-                    <th class="py-3 px-6">Sales Month</th>
-                    <th class="py-3 px-6">Total Sales ($)</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-[#2a2a2a]">
-                {% for row in sales_trends %}
-                <tr class="hover:bg-slate-50 dark:hover:bg-[#2a2a2a]/30">
-                    <td class="py-2.5 px-6 font-medium">{{ row.SalesYear }}</td>
-                    <td class="py-2.5 px-6">{{ row.SalesMonth }}</td>
-                    <td class="py-2.5 px-6 font-mono text-emerald-600 dark:text-emerald-400">${{ row.TotalSales }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="3" class="py-6 px-6 text-center text-slate-500">No sales data found.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Top Territories
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+                    <tr>
+                        <th class="py-3 px-6">Territory</th>
+                        <th class="py-3 px-6">Country</th>
+                        <th class="py-3 px-6">Orders</th>
+                        <th class="py-3 px-6">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in top_territories %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-2.5 px-6 font-medium">{{ row.TerritoryName|default:"Unknown" }}</td>
+                        <td class="py-2.5 px-6">{{ row.CountryName }}</td>
+                        <td class="py-2.5 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalRevenueDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="py-6 px-6 text-center text-slate-500">No territory data found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    new Chart(document.getElementById('salesChart'), {
-        type: 'line',
+    const dashboardIsDark = document.documentElement.classList.contains('dark');
+    const axisColor = dashboardIsDark ? '#cbd5e1' : '#475569';
+    const gridColor = dashboardIsDark ? 'rgba(148, 163, 184, 0.18)' : '#e2e8f0';
+
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+
+        document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+            if (menu.id !== dropdownId) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        dropdown.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const clickedInsideDropdown = event.target.closest('[id$="Dropdown"]');
+        const clickedDropdownButton = event.target.closest('button[onclick^="toggleDropdown"]');
+
+        if (!clickedInsideDropdown && !clickedDropdownButton) {
+            document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+                menu.classList.add('hidden');
+            });
+        }
+    });
+
+    new Chart(document.getElementById('countryChart'), {
+        type: 'bar',
         data: {
-            labels: {{ chart_labels|safe }},
-            datasets: [{ label: 'Total Sales ($)', data: {{ chart_values|safe }}, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3 }]
+            labels: {{ country_chart_labels|default:"[]"|safe }},
+            datasets: [{
+                label: 'Revenue ($)',
+                data: {{ country_chart_values|default:"[]"|safe }},
+                backgroundColor: dashboardIsDark ? '#60a5fa' : '#2563eb',
+                borderRadius: 4
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                grid: { color: document.documentElement.classList.contains('dark') ? '#2a2a2a' : '#e2e8f0' }
+                x: {
+                    ticks: { color: axisColor },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    ticks: {
+                        color: axisColor,
+                        callback: function(value) {
+                            return '$' + Number(value).toLocaleString();
+                        }
+                    },
+                    grid: { color: gridColor }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: axisColor }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('yearChart'), {
+        type: 'line',
+        data: {
+            labels: {{ year_chart_labels|default:"[]"|safe }},
+            datasets: [{
+                label: 'Revenue ($)',
+                data: {{ year_chart_values|default:"[]"|safe }},
+                borderColor: dashboardIsDark ? '#34d399' : '#059669',
+                backgroundColor: dashboardIsDark ? 'rgba(52, 211, 153, 0.16)' : 'rgba(5, 150, 105, 0.12)',
+                fill: true,
+                tension: 0.25
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: { color: axisColor },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    ticks: {
+                        color: axisColor,
+                        callback: function(value) {
+                            return '$' + Number(value).toLocaleString();
+                        }
+                    },
+                    grid: { color: gridColor }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: axisColor }
+                }
             }
         }
     });

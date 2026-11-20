@@ -77,7 +77,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'AdventureWorks2019',
-        'HOST': r'DESKTOP-OJUPP2D\ISINFOMDB', #CHANGE THIS INTO UR SERVER NAME SA SQL
+        'HOST': r'JULI', #CHANGE THIS INTO UR SERVER NAME SA SQL
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {
@@ -112,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Manila'
 
 USE_I18N = True
 

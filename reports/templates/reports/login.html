@@ -1,42 +1,114 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" id="html-root">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In | DATAOPT Governance Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold">AW</div>
-            <div>
-                <h1 class="text-lg font-bold">DATAOPT FINALS</h1>
-                <p class="text-xs text-slate-400">Role-Based Data Governance Portal</p>
-            </div>
-        </div>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-6 transition-colors duration-200">
+    <button
+        type="button"
+        onclick="toggleTheme()"
+        class="fixed top-4 right-4 flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        aria-label="Toggle light or dark mode">
+        <span id="theme-indicator" class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+        <span id="theme-text">Light Mode</span>
+    </button>
 
-        <form method="POST" class="space-y-4">
-            {% csrf_token %}
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Operator Username</label>
-                <input type="text" name="username" value="jakob.limjoco" required
-                       class="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-sm focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Select RBAC Security Profile</label>
-                <select name="role" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-sm focus:outline-none focus:border-blue-500">
-                    <option value="admin">Chief Data Officer (Full Access - All 4 Modules)</option>
-                    <option value="sales_mgr">Sales & Territory Manager (Modules 1 & 2 Only)</option>
-                    <option value="finance_analyst">Financial Risk Analyst (Modules 3 & 4 Only)</option>
-                    <option value="viewer">General Auditor (Overview Only - Modules Locked)</option>
-                </select>
+    <main class="w-full max-w-md">
+        <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 shadow-xl dark:shadow-2xl transition-colors duration-200" aria-labelledby="login-heading">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white" aria-hidden="true">
+                    AW
+                </div>
+                <div>
+                    <h1 id="login-heading" class="text-xl font-bold text-slate-950 dark:text-white">Sign in</h1>
+                    <p class="text-sm text-slate-600 dark:text-slate-300">DATAOPT Governance Portal</p>
+                </div>
             </div>
 
-            <button type="submit" class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold text-sm transition">
-                Authenticate & Enter Portal
-            </button>
-        </form>
-    </div>
+            {% if error %}
+                <div class="mb-5 rounded-lg border border-red-300 dark:border-red-400 bg-red-50 dark:bg-red-950/60 px-4 py-3 text-sm text-red-700 dark:text-red-100" role="alert">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-5" novalidate>
+                {% csrf_token %}
+
+                <div>
+                    <label for="username" class="block text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                        Username
+                    </label>
+                    <input
+                        id="username"
+                        type="text"
+                        name="username"
+                        value="{{ username|default:'' }}"
+                        autocomplete="username"
+                        required
+                        aria-required="true"
+                        class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 text-base text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter your username">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                        Password
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        required
+                        aria-required="true"
+                        class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 text-base text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter your password">
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 font-semibold text-base text-white transition">
+                    Sign in
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const root = document.getElementById('html-root');
+        const themeText = document.getElementById('theme-text');
+        const themeIndicator = document.getElementById('theme-indicator');
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                root.classList.add('dark');
+                themeText.innerText = 'Dark Mode';
+                themeIndicator.classList.remove('bg-yellow-400');
+                themeIndicator.classList.add('bg-emerald-400');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                root.classList.remove('dark');
+                themeText.innerText = 'Light Mode';
+                themeIndicator.classList.remove('bg-emerald-400');
+                themeIndicator.classList.add('bg-yellow-400');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function toggleTheme() {
+            const nextTheme = root.classList.contains('dark') ? 'light' : 'dark';
+            applyTheme(nextTheme);
+        }
+
+        applyTheme(localStorage.getItem('theme') || 'light');
+    </script>
 </body>
 </html>

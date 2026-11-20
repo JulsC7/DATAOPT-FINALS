@@ -1,65 +1,269 @@
 from functools import wraps
 from django.shortcuts import render, redirect
+from .models import AuditLog
 
-ROLE_PERMISSIONS = {
-    'Governance': {
-        'label': 'Data Governance',
-        'tag': 'GOVERNANCE',
-        'initials': 'DG',
-        'allowed_modules': ['dashboard', 'reports_library', 'customers', 'rbac_audit'],
-        'can_export': True,
+# departments
+Departments = {
+    'All': {
+        'label': 'All Departments',
+        'modules': ['sales', 'territories', 'customers', 'revenue', 'cost'],
     },
-    'Administrator': {
-        'label': 'System Admin',
-        'tag': 'ADMINISTRATOR',
-        'initials': 'SA',
-        'allowed_modules': ['dashboard', 'reports_library', 'revenue', 'cost', 'sales', 'customers', 'territories', 'rbac_audit'],
-        'can_export': True,
+    'Sales': {
+        'label': 'Sales',
+        'modules': ['sales', 'territories'],
     },
-    'Manager': {
-        'label': 'Exec Manager',
-        'tag': 'MANAGER',
-        'initials': 'EM',
-        'allowed_modules': ['dashboard', 'reports_library', 'revenue', 'cost', 'sales', 'customers', 'territories', 'rbac_audit'],
-        'can_export': True,
+    'Customer': {
+        'label': 'Customer',
+        'modules': ['customers'],
     },
-    'Supervisor': {
-        'label': 'Dept Supervisor',
-        'tag': 'SUPERVISOR',
-        'initials': 'DS',
-        'allowed_modules': ['dashboard', 'reports_library', 'sales', 'customers', 'territories', 'rbac_audit'],
-        'can_export': True,
+    'Revenue': {
+        'label': 'Revenue and Loss',
+        'modules': ['revenue'],
     },
-    'Optimization': {
-        'label': 'Optimization (Sales)',
-        'tag': 'OPTIMIZATION',
-        'initials': 'OP',
-        'allowed_modules': ['sales', 'territories', 'rbac_audit'],
-        'can_export': True,
-    },
-    'Science': {
-        'label': 'Science (Rev & Loss)',
-        'tag': 'DATA SCIENCE',
-        'initials': 'DS',
-        'allowed_modules': ['revenue', 'rbac_audit'],
-        'can_export': True,
-    },
-    'Engineering': {
-        'label': 'Engineering (Cost)',
-        'tag': 'ENGINEERING',
-        'initials': 'EN',
-        'allowed_modules': ['cost', 'rbac_audit'],
-        'can_export': True,
-    },
-    'Employee': {
-        'label': 'Staff Employee',
-        'tag': 'EMPLOYEE',
-        'initials': 'SE',
-        'allowed_modules': ['dashboard', 'customers', 'rbac_audit'],
-        'can_export': False,
+    'Cost': {
+        'label': 'Cost',
+        'modules': ['cost'],
     },
 }
 
+# roles/permissions
+Role_Permission = {
+    'Administrator': {
+        'title': 'Administrator',
+        'tag': 'ADMINISTRATOR',
+        'initials': 'AD',
+        'scope': 'all',
+        'base_modules': ['dashboard', 'reports_library', 'sales', 'territories', 'customers', 'revenue', 'cost', 'rbac_audit'],
+        'can_export': True,
+        'can_manage_users': True,
+        'can_edit_rbac': True,
+        'can_view_rbac': True,
+        'can_view_audit': True,
+        'can_manage_views': 'all',
+        'can_share_views': True,
+        'can_manage_notes': 'all',
+        'aggregated_only': False,
+        'mask_pii': True,
+    },
+    'Manager': {
+        'title': 'Executive Management',
+        'tag': 'MANAGER',
+        'initials': 'MG',
+        'scope': 'all',
+        'base_modules': ['dashboard', 'reports_library', 'sales', 'territories', 'customers', 'revenue', 'cost'],
+        'can_export': True,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': 'own',
+        'can_share_views': True,
+        'can_manage_notes': 'all',
+        'aggregated_only': False,
+        'mask_pii': True,
+    },
+    'Supervisor': {
+        'title': 'Department Operations Supervisor',
+        'tag': 'SUPERVISOR',
+        'initials': 'SV',
+        'scope': 'department',
+        'base_modules': ['dashboard', 'reports_library'],
+        'can_export': True,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': 'own',
+        'can_share_views': False,
+        'can_manage_notes': 'own',
+        'aggregated_only': False,
+        'mask_pii': True,
+    },
+    'Sales Analyst': {
+        'title': 'Sales Department Analyst',
+        'tag': 'SALES ANALYST',
+        'initials': 'SA',
+        'scope': 'restricted',
+        'base_modules': ['dashboard', 'reports_library', 'sales'],
+        'can_export': False,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': False,
+        'can_share_views': False,
+        'can_manage_notes': False,
+        'aggregated_only': True,
+        'mask_pii': True,
+    },
+    'Customer Analyst': {
+        'title': 'Marketing & Customer Relations',
+        'tag': 'CUSTOMER ANALYST',
+        'initials': 'CA',
+        'scope': 'restricted',
+        'base_modules': ['dashboard', 'reports_library', 'customers'],
+        'can_export': False,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': False,
+        'can_share_views': False,
+        'can_manage_notes': False,
+        'aggregated_only': True,
+        'mask_pii': True,
+    },
+    'Financial Analyst': {
+        'title': 'Finance & Accounting',
+        'tag': 'FINANCIAL ANALYST',
+        'initials': 'FA',
+        'scope': 'restricted',
+        'base_modules': ['dashboard', 'reports_library', 'revenue'],
+        'can_export': False,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': False,
+        'can_share_views': False,
+        'can_manage_notes': False,
+        'aggregated_only': True,
+        'mask_pii': True,
+    },
+    'Cost Analyst': {
+        'title': 'Production & Manufacturing',
+        'tag': 'COST ANALYST',
+        'initials': 'PA',
+        'scope': 'restricted',
+        'base_modules': ['dashboard', 'reports_library', 'cost'],
+        'can_export': False,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': False,
+        'can_share_views': False,
+        'can_manage_notes': False,
+        'aggregated_only': True,
+        'mask_pii': True,
+    },
+    'Employee': {
+        'title': 'Employee',
+        'tag': 'EMPLOYEE',
+        'initials': 'EM',
+        'scope': 'all_aggregated',
+        'base_modules': ['dashboard', 'reports_library', 'sales', 'territories', 'customers', 'revenue', 'cost'],
+        'can_export': False,
+        'can_manage_users': False,
+        'can_edit_rbac': False,
+        'can_view_rbac': False,
+        'can_view_audit': False,
+        'can_manage_views': False,
+        'can_share_views': False,
+        'can_manage_notes': False,
+        'aggregated_only': True,
+        'mask_pii': True,
+    },
+}
+
+
+def parse_departments(dept_key: str) -> list:
+    departments = [
+        department.strip()
+        for department in str(dept_key or '').split(',')
+        if department.strip()
+    ]
+
+    if not departments:
+        return ['Sales']
+
+    valid_departments = [
+        department
+        for department in departments
+        if department in Departments
+    ]
+
+    return valid_departments or ['Sales']
+
+
+def resolve_allowed_modules(role_key: str, dept_key: str) -> list:
+    """Computes permitted modules based on Role + Assigned Department(s)."""
+    policy = Role_Permission.get(role_key, Role_Permission['Employee'])
+    selected_departments = parse_departments(dept_key)
+
+    if 'All' in selected_departments or policy['scope'] in ('all', 'all_aggregated'):
+        return policy['base_modules']
+
+    if policy['scope'] == 'department':
+        combined_modules = list(policy['base_modules'])
+
+        for department in selected_departments:
+            dept_modules = Departments.get(department, Departments['Sales'])['modules']
+            combined_modules.extend(dept_modules)
+
+        return list(dict.fromkeys(combined_modules))
+
+    return policy['base_modules']
+
+
+def get_user_context(request, active_page=''):
+    """Unified template context builder used by all views and 403 handlers."""
+    role_key = request.session.get('active_role', 'Employee')
+    if role_key not in Role_Permission:
+        role_key = 'Employee'
+
+    dept_key = request.session.get('active_department', 'Sales')
+    selected_departments = parse_departments(dept_key)
+
+    policy = Role_Permission[role_key]
+    allowed_modules = resolve_allowed_modules(role_key, dept_key)
+
+    department_labels = [
+        Departments[department]['label']
+        for department in selected_departments
+        if department in Departments
+    ]
+
+    department_label = ', '.join(department_labels) if department_labels else 'Sales'
+
+    display_role = (
+        f"{department_label} {policy['title']}"
+        if policy['scope'] == 'department'
+        else policy['title']
+    )
+
+    return {
+        'username': request.session.get('username', 'aw_user'),
+        'active_role': role_key,
+        'active_department': dept_key,
+        'active_departments': selected_departments,
+        'department_label': department_label,
+        'role_title': display_role,
+        'tag': policy['tag'],
+        'initials': policy['initials'],
+        'allowed_modules': allowed_modules,
+        'policy': policy,
+        'can_export': policy['can_export'],
+        'can_view_audit': policy['can_view_audit'],
+        'can_edit_rbac': policy['can_edit_rbac'],
+        'aggregated_only': policy['aggregated_only'],
+        'active_page': active_page,
+    }
+
+
+def log_audit_event(request, role_key, dept_key, action, status, detail):
+    try:
+        AuditLog.objects.create(
+            username=request.session.get('username', 'anonymous'),
+            role=role_key,
+            department=dept_key,
+            action=action,
+            status=status,
+            detail=detail,
+        )
+    except Exception:
+        # Keep the application usable even if the audit table is unavailable.
+        pass
 
 def mask_person_name(first_name: str, last_name: str) -> str:
     f = (first_name[0] + '*' * max(len(first_name) - 1, 2)) if first_name else '***'
@@ -74,27 +278,41 @@ def mask_phone_number(phone: str) -> str:
 
 
 def require_module_access(module_key: str):
+    """Enforces login and checks Role + Department module permissions."""
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped(request, *args, **kwargs):
             if not request.session.get('is_authenticated'):
                 return redirect('login')
-            active_role = request.session.get('active_role', 'Governance')
-            policy = ROLE_PERMISSIONS.get(active_role, ROLE_PERMISSIONS['Employee'])
-            if module_key not in policy['allowed_modules']:
-                logs = request.session.get('audit_logs', [])
-                logs.insert(0, {
-                    'role': policy['label'],
-                    'action': f'GET /{module_key}/',
-                    'status': 'DENIED (403)',
-                    'detail': f'Role {active_role} blocked from {module_key} module',
-                })
-                request.session['audit_logs'] = logs[:20]
-                return render(request, 'reports/access_denied.html', {
-                    'active_role': active_role,
-                    'policy': policy,
-                    'attempted_module': module_key,
-                }, status=403)
+
+            role_key = request.session.get('active_role', 'Employee')
+            dept_key = request.session.get('active_department', 'Sales')
+            policy = Role_Permission.get(role_key, Role_Permission['Employee'])
+            allowed = resolve_allowed_modules(role_key, dept_key)
+
+            if module_key == 'rbac_audit' and not policy['can_view_rbac'] and not policy['can_view_audit']:
+                log_audit_event(request, role_key, dept_key, f"GET {request.path}", "DENIED (403)", "Unauthorized RBAC/Audit access")
+                ctx = get_user_context(request, active_page=module_key)
+                ctx['denied_module'] = "ROLES & AUDIT LOGS"
+                return render(request, 'reports/access_denied.html', ctx, status=403)
+
+            if module_key not in allowed:
+                log_audit_event(
+                    request, role_key, dept_key,
+                    f"GET {request.path}",
+                    "DENIED (403)",
+                    f"{role_key} ({dept_key}) blocked from '{module_key}' module"
+                )
+                ctx = get_user_context(request, active_page=module_key)
+                ctx['denied_module'] = module_key.upper()
+                return render(request, 'reports/access_denied.html', ctx, status=403)
+
+            log_audit_event(
+                request, role_key, dept_key,
+                f"GET {request.path}",
+                "ALLOWED (200)",
+                f"Accessed '{module_key}' module"
+            )
             return view_func(request, *args, **kwargs)
         return _wrapped
     return decorator

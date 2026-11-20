@@ -1,67 +1,319 @@
 {% extends 'reports/base.html' %}
-{% block title %}Customer Profiles | AdventureWorks{% endblock %}
-{% block breadcrumb %}Module 2: Active Customer Distribution{% endblock %}
+{% block title %}Customers | AdventureWorks{% endblock %}
+{% block breadcrumb %}Customers{% endblock %}
 
 {% block content %}
-<!-- Chart Card -->
-<div class="bg-white dark:bg-[#181818] p-6 rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm">
-    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Active Customers by Sales Territory</h3>
-    <div class="h-72"><canvas id="customersChart"></canvas></div>
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-950 dark:text-white">Customers</h1>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Active customers by territory and customer directory access.
+        </p>
+    </div>
+
+    <div class="flex gap-3">
+        <a href="{% url 'export_report' 'customers' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+            Export CSV
+        </a>
+        <a href="{% url 'export_report' 'customers' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+            Export PDF
+        </a>
+    </div>
 </div>
 
-<!-- Customer Distribution Table -->
-<div class="bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-[#2a2a2a] shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 dark:border-[#2a2a2a]">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Territory Customer Distribution</h3>
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <form method="GET" class="p-4 flex flex-col xl:flex-row xl:items-end gap-4">
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Year / Years
+            </label>
+
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>{% if selected_years %}{{ selected_years|length }} selected{% else %}All Years{% endif %}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for year in available_years %}
+                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ year }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No years available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Country / Countries
+            </label>
+
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>{% if selected_countries %}{{ selected_countries|length }} selected{% else %}All Countries{% endif %}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for country in countries %}
+                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ country.name }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No countries available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+<div class="relative w-full xl:w-56">
+    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+        Customer Type
+    </label>
+
+    <button type="button" onclick="toggleDropdown('customerTypesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+        <span>
+            {% if selected_customer_types %}
+                {{ selected_customer_types|length }} selected
+            {% else %}
+                All Types
+            {% endif %}
+        </span>
+        <span class="text-slate-400">▾</span>
+    </button>
+
+    <div id="customerTypesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+        <div class="p-2 space-y-1">
+            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                <input
+                    type="checkbox"
+                    name="customer_types"
+                    value="store"
+                    {% if 'store' in selected_customer_types %}checked{% endif %}
+                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                <span>Store</span>
+            </label>
+
+            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                <input
+                    type="checkbox"
+                    name="customer_types"
+                    value="individual"
+                    {% if 'individual' in selected_customer_types %}checked{% endif %}
+                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                <span>Individual</span>
+            </label>
+        </div>
     </div>
-    <div class="overflow-x-auto max-h-96">
-        <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-[#121212] uppercase text-slate-500 sticky top-0">
-                <tr>
-                    <th class="py-3 px-6">Territory Name</th>
-                    <th class="py-3 px-6">Country Code</th>
-                    <th class="py-3 px-6">Active Customers</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-[#2a2a2a]">
-                <!-- Unpacks friend's exact 'active_customers' query result from views.py -->
-                {% for row in active_customers %}
-                <tr class="hover:bg-slate-50 dark:hover:bg-[#2a2a2a]/30">
-                    <td class="py-2.5 px-6 font-medium">{{ row.TerritoryName }}</td>
-                    <td class="py-2.5 px-6"><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono">{{ row.CountryRegionCode }}</span></td>
-                    <td class="py-2.5 px-6 font-mono font-semibold">{{ row.ActiveCustomerCount }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3" class="py-6 px-6 text-center text-slate-500">No customer data found. Check your database connection.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+</div>
+
+        <div class="flex gap-3">
+            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                Apply
+            </button>
+            <a href="{% url 'customers' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Active Customers by Territory
+        </h3>
+
+        <div class="flex items-center gap-2">
+            <label for="customersChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Chart Type
+            </label>
+            <select id="customersChartType" onchange="changeCustomersChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                <option value="bar">Bar</option>
+                <option value="line">Line</option>
+                <option value="doughnut">Doughnut</option>
+                <option value="polarArea">Polar Area</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="h-80">
+        <canvas id="customersChart"></canvas>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Active Customers by Territory
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+                    <tr>
+                        <th class="py-3 px-6">Territory</th>
+                        <th class="py-3 px-6">Country</th>
+                        <th class="py-3 px-6">Active Customers</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in active_customers %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-2.5 px-6 font-medium">{{ row.TerritoryName }}</td>
+                        <td class="py-2.5 px-6">{{ row.CountryName }}</td>
+                        <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">{{ row.ActiveCustomerCountDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="py-6 px-6 text-center text-slate-500">
+                            No customer summary data found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Customer Directory
+            </h3>
+        </div>
+
+        {% if can_view_customer_details %}
+            <div class="overflow-x-auto max-h-80">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+                        <tr>
+                            <th class="py-3 px-6">Customer ID</th>
+                            <th class="py-3 px-6">Name</th>
+                            <th class="py-3 px-6">Phone</th>
+                            <th class="py-3 px-6">Territory</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for row in customer_directory %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                            <td class="py-2.5 px-6 font-mono">{{ row.CustomerID }}</td>
+                            <td class="py-2.5 px-6">{{ row.DisplayName }}</td>
+                            <td class="py-2.5 px-6">{{ row.DisplayPhone }}</td>
+                            <td class="py-2.5 px-6">{{ row.TerritoryName }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="py-6 px-6 text-center text-slate-500">
+                                No customer directory rows available for this filter.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-6 text-sm text-slate-600 dark:text-slate-300">
+                Your current role can view customer summaries, but cannot view customer directory details.
+            </div>
+        {% endif %}
     </div>
 </div>
 
 <script>
-    const isDark = document.documentElement.classList.contains('dark');
-    new Chart(document.getElementById('customersChart'), {
-        type: 'bar',
-        data: {
-            labels: {{ chart_labels|safe }},
-            datasets: [{
-                label: 'Active Customers',
-                data: {{ chart_values|safe }},
-                backgroundColor: '#10b981',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } },
-                y: { grid: { color: isDark ? '#2a2a2a' : '#e2e8f0' } }
+    const pageIsDark = document.documentElement.classList.contains('dark');
+    const axisColor = pageIsDark ? '#cbd5e1' : '#475569';
+    const gridColor = pageIsDark ? 'rgba(148, 163, 184, 0.18)' : '#e2e8f0';
+    const palette = pageIsDark
+        ? ['#60a5fa', '#34d399', '#fbbf24', '#fb7185', '#a78bfa', '#22d3ee', '#a3e635', '#fdba74']
+        : ['#2563eb', '#059669', '#d97706', '#e11d48', '#7c3aed', '#0891b2', '#65a30d', '#ea580c'];
+
+    let customersChartInstance;
+
+    const customerLabels = {{ chart_labels|default:"[]"|safe }};
+    const customerValues = {{ chart_values|default:"[]"|safe }};
+
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+            if (menu.id !== dropdownId) {
+                menu.classList.add('hidden');
             }
+        });
+        dropdown.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const clickedInsideDropdown = event.target.closest('[id$="Dropdown"]');
+        const clickedDropdownButton = event.target.closest('button[onclick^="toggleDropdown"]');
+
+        if (!clickedInsideDropdown && !clickedDropdownButton) {
+            document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+                menu.classList.add('hidden');
+            });
         }
     });
+
+    function renderCustomersChart(type) {
+        const canvas = document.getElementById('customersChart');
+
+        if (customersChartInstance) {
+            customersChartInstance.destroy();
+        }
+
+        const isCircular = type === 'doughnut' || type === 'polarArea';
+
+        customersChartInstance = new Chart(canvas, {
+            type: type,
+            data: {
+                labels: customerLabels,
+                datasets: [{
+                    label: 'Active Customers',
+                    data: customerValues,
+                    backgroundColor: type === 'line' ? 'rgba(37, 99, 235, 0.12)' : palette,
+                    borderColor: pageIsDark ? '#60a5fa' : '#2563eb',
+                    fill: type === 'line',
+                    tension: type === 'line' ? 0.15 : 0,
+                    pointRadius: type === 'line' ? 4 : 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: isCircular ? {} : {
+                    x: {
+                        type: 'category',
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: axisColor }
+                    }
+                }
+            }
+        });
+    }
+
+    function changeCustomersChartType() {
+        renderCustomersChart(document.getElementById('customersChartType').value);
+    }
+
+    renderCustomersChart('bar');
 </script>
 {% endblock %}
