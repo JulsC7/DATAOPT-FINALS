@@ -5,39 +5,44 @@
 {% block content %}
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-slate-950 dark:text-white">Customers</h1>
-        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">Customers</h1>
+        <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
             Active customers by territory and customer directory access.
         </p>
     </div>
 
     <div class="flex gap-3">
-        <a href="{% url 'export_report' 'customers' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+        <a href="{% url 'export_report' 'customers' 'csv' %}" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
             Export CSV
         </a>
-        <a href="{% url 'export_report' 'customers' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        <a href="{% url 'export_report' 'customers' 'pdf' %}" target="_blank" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm">
             Export PDF
         </a>
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-    <form method="GET" class="p-4 flex flex-col xl:flex-row xl:items-end gap-4">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <form method="GET" class="p-5 flex flex-col xl:flex-row xl:items-end gap-4">
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Year / Years
             </label>
 
-            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                <span>{% if selected_years %}{{ selected_years|length }} selected{% else %}All Years{% endif %}</span>
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_years_label }}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for year in available_years %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                        <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="years"
+                            value="{{ year }}"
+                            {% if year|stringformat:"s" in selected_years %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ year }}</span>
                     </label>
                     {% empty %}
@@ -52,16 +57,21 @@
                 Country / Countries
             </label>
 
-            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                <span>{% if selected_countries %}{{ selected_countries|length }} selected{% else %}All Countries{% endif %}</span>
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_countries_label }}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for country in countries %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                        <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="countries"
+                            value="{{ country.code }}"
+                            {% if country.code in selected_countries %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ country.name }}</span>
                     </label>
                     {% empty %}
@@ -71,69 +81,63 @@
             </div>
         </div>
 
-<div class="relative w-full xl:w-56">
-    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-        Customer Type
-    </label>
-
-    <button type="button" onclick="toggleDropdown('customerTypesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-        <span>
-            {% if selected_customer_types %}
-                {{ selected_customer_types|length }} selected
-            {% else %}
-                All Types
-            {% endif %}
-        </span>
-        <span class="text-slate-400">▾</span>
-    </button>
-
-    <div id="customerTypesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
-        <div class="p-2 space-y-1">
-            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <input
-                    type="checkbox"
-                    name="customer_types"
-                    value="store"
-                    {% if 'store' in selected_customer_types %}checked{% endif %}
-                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                <span>Store</span>
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Customer Type
             </label>
 
-            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <input
-                    type="checkbox"
-                    name="customer_types"
-                    value="individual"
-                    {% if 'individual' in selected_customer_types %}checked{% endif %}
-                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                <span>Individual</span>
-            </label>
+            <button type="button" onclick="toggleDropdown('customerTypesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_customer_types_label }}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="customerTypesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="customer_types"
+                            value="store"
+                            {% if 'store' in selected_customer_types %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>Store</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="customer_types"
+                            value="individual"
+                            {% if 'individual' in selected_customer_types %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>Individual</span>
+                    </label>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
         <div class="flex gap-3">
-            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            <button type="submit" class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                 Apply
             </button>
-            <a href="{% url 'customers' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <a href="{% url 'customers' %}" class="rounded-xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                 Clear
             </a>
         </div>
     </form>
 </div>
 
-<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <h3 class="text-center md:text-left text-lg font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
             Active Customers by Territory
         </h3>
 
         <div class="flex items-center gap-2">
-            <label for="customersChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <label for="customersChartType" class="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Chart Type
             </label>
-            <select id="customersChartType" onchange="changeCustomersChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+            <select id="customersChartType" onchange="changeCustomersChartType()" class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-sm text-slate-700 dark:text-slate-200">
                 <option value="bar">Bar</option>
                 <option value="line">Line</option>
                 <option value="doughnut">Doughnut</option>
@@ -148,16 +152,16 @@
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white">
                 Active Customers by Territory
             </h3>
         </div>
 
         <div class="overflow-x-auto max-h-80">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
                     <tr>
                         <th class="py-3 px-6">Territory</th>
                         <th class="py-3 px-6">Country</th>
@@ -168,9 +172,9 @@
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     {% for row in active_customers %}
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                        <td class="py-2.5 px-6 font-medium">{{ row.TerritoryName }}</td>
-                        <td class="py-2.5 px-6">{{ row.CountryName }}</td>
-                        <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">{{ row.ActiveCustomerCountDisplay }}</td>
+                        <td class="py-3 px-6 font-medium">{{ row.TerritoryName }}</td>
+                        <td class="py-3 px-6">{{ row.CountryName }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">{{ row.ActiveCustomerCountDisplay }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -184,17 +188,17 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white">
                 Customer Directory
             </h3>
         </div>
 
         {% if can_view_customer_details %}
             <div class="overflow-x-auto max-h-80">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
                         <tr>
                             <th class="py-3 px-6">Customer ID</th>
                             <th class="py-3 px-6">Name</th>
@@ -206,10 +210,10 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         {% for row in customer_directory %}
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                            <td class="py-2.5 px-6 font-mono">{{ row.CustomerID }}</td>
-                            <td class="py-2.5 px-6">{{ row.DisplayName }}</td>
-                            <td class="py-2.5 px-6">{{ row.DisplayPhone }}</td>
-                            <td class="py-2.5 px-6">{{ row.TerritoryName }}</td>
+                            <td class="py-3 px-6 font-mono">{{ row.CustomerID }}</td>
+                            <td class="py-3 px-6">{{ row.DisplayName }}</td>
+                            <td class="py-3 px-6">{{ row.DisplayPhone }}</td>
+                            <td class="py-3 px-6">{{ row.TerritoryName }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -222,7 +226,7 @@
                 </table>
             </div>
         {% else %}
-            <div class="p-6 text-sm text-slate-600 dark:text-slate-300">
+            <div class="p-6 text-base text-slate-600 dark:text-slate-300">
                 Your current role can view customer summaries, but cannot view customer directory details.
             </div>
         {% endif %}
@@ -244,11 +248,13 @@
 
     function toggleDropdown(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
+
         document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
             if (menu.id !== dropdownId) {
                 menu.classList.add('hidden');
             }
         });
+
         dropdown.classList.toggle('hidden');
     }
 

@@ -27,81 +27,69 @@
 
 <body class="bg-slate-100 dark:bg-darkbg text-slate-800 dark:text-slate-100 min-h-screen flex font-sans antialiased transition-colors duration-200">
 
-    <aside class="w-64 bg-white dark:bg-sidebarbg border-r border-slate-200 dark:border-bordercol flex flex-col justify-between shrink-0 select-none">
-        <div>
-            <div class="p-5 border-b border-slate-200 dark:border-bordercol flex items-center gap-3">
-                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xs">
+        <aside class="w-72 h-screen sticky top-0 bg-white dark:bg-sidebarbg border-r border-slate-200 dark:border-bordercol flex flex-col justify-between shrink-0 select-none">        <div>
+            <div class="p-6 border-b border-slate-200 dark:border-bordercol flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-sm">
                     AW
                 </div>
 
                 <div>
-                    <h1 class="font-bold text-sm tracking-wide text-slate-900 dark:text-white">
+                    <h1 class="font-bold text-base tracking-wide text-slate-900 dark:text-white">
                         AdventureWorks
                     </h1>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 tracking-wider uppercase">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 tracking-wider uppercase">
                         BI Workspace
                     </p>
                 </div>
             </div>
 
-            <nav class="py-3 px-2 space-y-1 text-xs font-medium">
-                <a href="{% url 'dashboard' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'dashboard' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                        Dashboard
-                    </span>
-                    <span class="text-emerald-500">✓</span>
+            <div class="overflow-y-auto">
+
+            <nav class="py-4 px-3 space-y-1 text-sm font-medium">
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'dashboard' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">📊</span>
+                    <span>Dashboard</span>
                 </a>
 
-                <a href="{% url 'revenue' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'revenue' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                        Revenue & Loss
-                    </span>
-                    <span class="text-emerald-500">✓</span>
+                <a href="{% url 'revenue' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'revenue' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">💰</span>
+                    <span>Revenue & Loss</span>
                 </a>
 
-                <a href="{% url 'cost' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'cost' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                        Products
-                    </span>
-                    <span class="text-emerald-500">✓</span>
+                <a href="{% url 'cost' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'cost' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">📦</span>
+                    <span>Products</span>
                 </a>
 
-                <a href="{% url 'customers' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'customers' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                        Customers
-                    </span>
-                    <span class="text-emerald-500">✓</span>
+                <a href="{% url 'customers' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'customers' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">👥</span>
+                    <span>Customers</span>
                 </a>
 
-                <a href="{% url 'sales' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'sales' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                        Sales
-                    </span>
-                    <span class="text-emerald-500">✓</span>
+                <a href="{% url 'sales' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'sales' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">📈</span>
+                    <span>Sales</span>
                 </a>
 
-                <div class="pt-4 pb-1 px-3 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                    Governance & Audit
+                <div class="pt-5 pb-2 px-4 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                    Governance
                 </div>
 
-                <a href="{% url 'rbac_audit' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg transition {% if active_page == 'rbac_audit' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                        RBAC & Audit Logs
-                    </span>
-                    <span class="text-emerald-500">✓</span>
+                <a href="{% url 'rbac_management' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'rbac_management' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">🛡️</span>
+                    <span>RBAC</span>
+                </a>
+
+                <a href="{% url 'audit_logs' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'audit_logs' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">🧾</span>
+                    <span>Audit Logs</span>
                 </a>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-200 dark:border-bordercol text-[11px] space-y-3">
+        <div class="p-5 border-t border-slate-200 dark:border-bordercol text-xs space-y-3">
             <div class="flex items-center gap-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
-                <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
                     {{ initials }}
                 </div>
 
@@ -115,14 +103,14 @@
                 </div>
             </div>
 
-            <a href="{% url 'logout' %}" class="block text-center py-1.5 px-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20 font-medium transition">
+            <a href="{% url 'logout' %}" class="block text-center py-2 px-3 rounded-lg bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20 font-medium transition">
                 Logout
             </a>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
-        <header class="h-14 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-6 flex items-center justify-between text-xs">
+        <header class="h-16 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-8 flex items-center justify-between text-sm">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
                 <span class="text-slate-900 dark:text-white tracking-wider font-semibold">
                     ADVENTUREWORKS BI
@@ -135,27 +123,27 @@
 
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300">
-                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                    <span class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
                         {{ initials }}
                     </span>
                     <div class="leading-tight">
                         <div class="font-semibold text-slate-900 dark:text-white">
                             {{ username }}
                         </div>
-                        <div class="text-[10px] text-slate-500 dark:text-slate-400">
+                        <div class="text-xs text-slate-500 dark:text-slate-400">
                             {{ role_title }}
                         </div>
                     </div>
                 </div>
 
-                <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:border-blue-500 transition font-medium">
+                <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:border-blue-500 transition font-medium">
                     <span class="w-2 h-2 rounded-full bg-emerald-400" id="theme-indicator"></span>
                     <span id="theme-text">Light Mode</span>
                 </button>
             </div>
         </header>
 
-        <div class="p-8 space-y-6 overflow-y-auto">
+        <div class="p-8 space-y-7 overflow-y-auto text-base">
             {% if db_warning %}
                 <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-100" role="alert">
                     <strong>Database warning:</strong> {{ db_warning }}

@@ -5,39 +5,44 @@
 {% block content %}
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-slate-950 dark:text-white">Sales Performance</h1>
-        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Monthly sales trends, territory performance, and customer purchasing activity.
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">Sales Performance</h1>
+        <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
+            Monthly sales trends, country comparison, year comparison, and customer purchasing activity.
         </p>
     </div>
 
     <div class="flex gap-3">
-        <a href="{% url 'export_report' 'sales' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+        <a href="{% url 'export_report' 'sales' 'csv' %}" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
             Export CSV
         </a>
-        <a href="{% url 'export_report' 'sales' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        <a href="{% url 'export_report' 'sales' 'pdf' %}" target="_blank" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm">
             Export PDF
         </a>
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-    <form method="GET" class="p-4 flex flex-col xl:flex-row xl:items-end gap-4">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <form method="GET" class="p-5 flex flex-col xl:flex-row xl:items-end gap-4">
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Year / Years
             </label>
 
-            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                <span>{% if selected_years %}{{ selected_years|length }} selected{% else %}All Years{% endif %}</span>
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_years_label }}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for year in available_years %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                        <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="years"
+                            value="{{ year }}"
+                            {% if year|stringformat:"s" in selected_years %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ year }}</span>
                     </label>
                     {% empty %}
@@ -52,16 +57,21 @@
                 Country / Countries
             </label>
 
-            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                <span>{% if selected_countries %}{{ selected_countries|length }} selected{% else %}All Countries{% endif %}</span>
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_countries_label }}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for country in countries %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                        <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="countries"
+                            value="{{ country.code }}"
+                            {% if country.code in selected_countries %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ country.name }}</span>
                     </label>
                     {% empty %}
@@ -71,131 +81,204 @@
             </div>
         </div>
 
-<div class="relative w-full xl:w-56">
-    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-        Channel / Channels
-    </label>
-
-    <button type="button" onclick="toggleDropdown('channelsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-        <span>
-            {% if selected_channels %}
-                {{ selected_channels|length }} selected
-            {% else %}
-                All Channels
-            {% endif %}
-        </span>
-        <span class="text-slate-400">▾</span>
-    </button>
-
-    <div id="channelsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
-        <div class="p-2 space-y-1">
-            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <input
-                    type="checkbox"
-                    name="channels"
-                    value="1"
-                    {% if '1' in selected_channels %}checked{% endif %}
-                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                <span>Online</span>
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Month / Months
             </label>
 
-            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <input
-                    type="checkbox"
-                    name="channels"
-                    value="0"
-                    {% if '0' in selected_channels %}checked{% endif %}
-                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                <span>Reseller</span>
-            </label>
+            <button type="button" onclick="toggleDropdown('monthsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_months_label }}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="monthsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for month in month_options %}
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="months"
+                            value="{{ month.value }}"
+                            {% if month.value in selected_months %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ month.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Channel / Channels
+            </label>
+
+            <button type="button" onclick="toggleDropdown('channelsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span class="truncate">{{ selected_channels_label }}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="channelsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="channels"
+                            value="1"
+                            {% if '1' in selected_channels %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>Online</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="channels"
+                            value="0"
+                            {% if '0' in selected_channels %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>Reseller</span>
+                    </label>
+                </div>
+            </div>
+        </div>
 
         <div class="flex gap-3">
-            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            <button type="submit" class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                 Apply
             </button>
-            <a href="{% url 'sales' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <a href="{% url 'sales' %}" class="rounded-xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                 Clear
             </a>
         </div>
     </form>
 </div>
 
-<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Monthly Sales Chart
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-lg font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Monthly Sales Trend
         </h3>
 
-        <div class="flex items-center gap-2">
-            <label for="salesChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Chart Type</label>
-            <select id="salesChartType" onchange="changeSalesChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <div class="flex justify-end mb-4">
+            <select id="salesChartType" onchange="changeSalesChartType()" class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-sm text-slate-700 dark:text-slate-200">
                 <option value="line">Line</option>
                 <option value="bar">Bar</option>
                 <option value="doughnut">Doughnut</option>
                 <option value="polarArea">Polar Area</option>
             </select>
         </div>
+
+        <div class="h-80">
+            <canvas id="salesChart"></canvas>
+        </div>
     </div>
 
-    <div class="h-80">
-        <canvas id="salesChart"></canvas>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-lg font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Compare Country Performance
+        </h3>
+        <div class="h-80">
+            <canvas id="countryPerformanceChart"></canvas>
+        </div>
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Sales by Territory
-            </h3>
-
-            <div class="flex items-center gap-2">
-                <label for="territoryChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Chart Type</label>
-                <select id="territoryChartType" onchange="changeTerritoryChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-                    <option value="bar">Bar</option>
-                    <option value="line">Line</option>
-                    <option value="doughnut">Doughnut</option>
-                    <option value="polarArea">Polar Area</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="h-72">
-            <canvas id="territoryChart"></canvas>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-lg font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Compare Sales by Year
+        </h3>
+        <div class="h-80">
+            <canvas id="yearCompareChart"></canvas>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Territory Revenue Breakdown
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-lg font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Sales by Territory
+        </h3>
+
+        <div class="flex justify-end mb-4">
+            <select id="territoryChartType" onchange="changeTerritoryChartType()" class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-sm text-slate-700 dark:text-slate-200">
+                <option value="bar">Bar</option>
+                <option value="line">Line</option>
+                <option value="doughnut">Doughnut</option>
+                <option value="polarArea">Polar Area</option>
+            </select>
+        </div>
+
+        <div class="h-80">
+            <canvas id="territoryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white">
+                Country Performance
             </h3>
         </div>
 
-        <div class="overflow-x-auto max-h-72">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
                     <tr>
-                        <th class="py-3 px-6">Territory</th>
                         <th class="py-3 px-6">Country</th>
-                        <th class="py-3 px-6">Group</th>
-                        <th class="py-3 px-6">Total Sales</th>
+                        <th class="py-3 px-6">Orders</th>
+                        <th class="py-3 px-6">Sales</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                    {% for row in territory_data %}
+                    {% for row in country_performance %}
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                        <td class="py-2.5 px-6 font-medium">{{ row.TerritoryName }}</td>
-                        <td class="py-2.5 px-6">{{ row.CountryName }}</td>
-                        <td class="py-2.5 px-6 text-slate-500 dark:text-slate-400">{{ row.TerritoryGroup }}</td>
-                        <td class="py-2.5 px-6 font-mono font-semibold text-emerald-700 dark:text-emerald-300">${{ row.TotalSalesDisplay }}</td>
+                        <td class="py-3 px-6 font-medium">{{ row.CountryName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalSalesDisplay }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="py-6 px-6 text-center text-slate-500">No territory sales data found.</td>
+                        <td colspan="3" class="py-6 px-6 text-center text-slate-500">No country performance data found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white">
+                Sales Customer Directory
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr>
+                        <th class="py-3 px-6">Customer ID</th>
+                        <th class="py-3 px-6">Territory</th>
+                        <th class="py-3 px-6">Orders</th>
+                        <th class="py-3 px-6">Lifetime Spend</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in sales_customer_directory %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-mono">{{ row.CustomerID }}</td>
+                        <td class="py-3 px-6">{{ row.TerritoryName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.LifetimeSpendDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="py-6 px-6 text-center text-slate-500">
+                            No sales customer directory data found.
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -204,54 +287,16 @@
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Sales Customer Directory
-        </h3>
-    </div>
-
-    <div class="overflow-x-auto max-h-96">
-        <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
-                <tr>
-                    <th class="py-3 px-6">Customer ID</th>
-                    <th class="py-3 px-6">Territory</th>
-                    <th class="py-3 px-6">Orders</th>
-                    <th class="py-3 px-6">Lifetime Spend</th>
-                </tr>
-            </thead>
-
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                {% for row in sales_customer_directory %}
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                    <td class="py-2.5 px-6 font-mono">{{ row.CustomerID }}</td>
-                    <td class="py-2.5 px-6">{{ row.TerritoryName }}</td>
-                    <td class="py-2.5 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
-                    <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.LifetimeSpendDisplay }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="py-6 px-6 text-center text-slate-500">
-                        No sales customer directory data found.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-bold text-slate-950 dark:text-white">
             Monthly Sales Breakdown
         </h3>
     </div>
 
     <div class="overflow-x-auto max-h-96">
-        <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
                 <tr>
                     <th class="py-3 px-6">Year</th>
                     <th class="py-3 px-6">Month</th>
@@ -262,10 +307,10 @@
             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                 {% for row in sales_trends %}
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                    <td class="py-2.5 px-6">{{ row.SalesYear }}</td>
-                    <td class="py-2.5 px-6">{{ row.SalesMonth }}</td>
-                    <td class="py-2.5 px-6 font-mono">{{ row.OrderCountDisplay }}</td>
-                    <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalSalesDisplay }}</td>
+                    <td class="py-3 px-6">{{ row.SalesYear }}</td>
+                    <td class="py-3 px-6">{{ row.SalesMonth }}</td>
+                    <td class="py-3 px-6 font-mono">{{ row.OrderCountDisplay }}</td>
+                    <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalSalesDisplay }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -292,6 +337,18 @@
     const salesValues = {{ chart_values|default:"[]"|safe }};
     const territoryLabels = {{ territory_chart_labels|default:"[]"|safe }};
     const territoryValues = {{ territory_chart_values|default:"[]"|safe }};
+    const countryLabels = {{ country_chart_labels|default:"[]"|safe }};
+    const countryValues = {{ country_chart_values|default:"[]"|safe }};
+    const yearLabels = {{ year_compare_labels|default:"[]"|safe }};
+    const yearValues = {{ year_compare_values|default:"[]"|safe }};
+
+    function shortNumber(value) {
+        const abs = Math.abs(Number(value));
+        if (abs >= 1000000000) return (Number(value) / 1000000000).toFixed(1) + 'B';
+        if (abs >= 1000000) return (Number(value) / 1000000).toFixed(1) + 'M';
+        if (abs >= 1000) return (Number(value) / 1000).toFixed(1) + 'K';
+        return Number(value).toLocaleString();
+    }
 
     function toggleDropdown(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
@@ -330,16 +387,14 @@
                     ticks: {
                         color: axisColor,
                         callback: function(value) {
-                            return '$' + Number(value).toLocaleString();
+                            return '$' + shortNumber(value);
                         }
                     },
                     grid: { color: gridColor }
                 }
             },
             plugins: {
-                legend: {
-                    labels: { color: axisColor }
-                }
+                legend: { labels: { color: axisColor } }
             }
         };
     }
@@ -393,6 +448,37 @@
             options: sharedOptions(type)
         });
     }
+
+    new Chart(document.getElementById('countryPerformanceChart'), {
+        type: 'bar',
+        data: {
+            labels: countryLabels,
+            datasets: [{
+                label: 'Country Sales ($)',
+                data: countryValues,
+                backgroundColor: pageIsDark ? '#60a5fa' : '#2563eb',
+                borderRadius: 6
+            }]
+        },
+        options: sharedOptions('bar')
+    });
+
+    new Chart(document.getElementById('yearCompareChart'), {
+        type: 'line',
+        data: {
+            labels: yearLabels,
+            datasets: [{
+                label: 'Year Sales ($)',
+                data: yearValues,
+                borderColor: pageIsDark ? '#34d399' : '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.14)',
+                fill: true,
+                tension: 0.25,
+                pointRadius: 4
+            }]
+        },
+        options: sharedOptions('line')
+    });
 
     function changeSalesChartType() {
         renderSalesChart(document.getElementById('salesChartType').value);

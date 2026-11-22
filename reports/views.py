@@ -77,38 +77,66 @@ def seed_default_user_accounts():
             }
         )
 
-def get_ordered_user_accounts():
-    account_order = [
-        'admin',
-        'manager',
-        'supervisor',
-        'financial_analyst',
-        'cost_analyst',
-        'customer_analyst',
-        'sales_analyst',
-    ]
-
-    accounts = {
-        account.username: account
-        for account in UserAccount.objects.exclude(role='Employee')
-    }
-
-    ordered_accounts = [
-        accounts[username]
-        for username in account_order
-        if username in accounts
-    ]
-
-    remaining_accounts = [
-        account
-        for username, account in accounts.items()
-        if username not in account_order
-    ]
-
-    return ordered_accounts + sorted(remaining_accounts, key=lambda account: account.username)
 
 def get_country_name(country_code):
     return COUNTRY_NAMES.get(country_code, country_code or 'Unknown')
+
+
+def dictfetchall(cursor):
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def money(value):
+    try:
+        return f"{float(value):,.2f}"
+    except (TypeError, ValueError):
+        return "0.00"
+
+
+def number(value):
+    try:
+        return f"{int(value):,}"
+    except (TypeError, ValueError):
+        return "0"
+
+
+def compact_number(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return "0"
+
+    abs_value = abs(value)
+
+    if abs_value >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    if abs_value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if abs_value >= 1_000:
+        return f"{value / 1_000:.1f}K"
+
+    return f"{value:.0f}"
+
+
+def get_selected_filters(request):
+    selected_years = [
+        year for year in request.GET.getlist('years')
+        if year.isdigit()
+    ]
+    selected_countries = [
+        country.strip() for country in request.GET.getlist('countries')
+        if country.strip()
+    ]
+    return selected_years, selected_countries
+
+
+def get_selected_months(request):
+    return [
+        month for month in request.GET.getlist('months')
+        if month.isdigit() and 1 <= int(month) <= 12
+    ]
+
 
 def get_selected_categories(request):
     return [
@@ -130,35 +158,89 @@ def get_selected_channels(request):
         if channel in ('0', '1')
     ]
 
-def dictfetchall(cursor):
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+def selected_years_label(selected_years):
+    return ', '.join(selected_years) if selected_years else 'All Years'
 
 
-def money(value):
-    try:
-        return f"{float(value):,.2f}"
-    except (TypeError, ValueError):
-        return "0.00"
+def selected_countries_label(selected_countries):
+    if not selected_countries:
+        return 'All Countries'
+
+    return ', '.join([
+        get_country_name(country)
+        for country in selected_countries
+    ])
 
 
-def number(value):
-    try:
-        return f"{int(value):,}"
-    except (TypeError, ValueError):
-        return "0"
+def selected_months_label(selected_months):
+    month_names = {
+        '1': 'Jan',
+        '2': 'Feb',
+        '3': 'Mar',
+        '4': 'Apr',
+        '5': 'May',
+        '6': 'Jun',
+        '7': 'Jul',
+        '8': 'Aug',
+        '9': 'Sep',
+        '10': 'Oct',
+        '11': 'Nov',
+        '12': 'Dec',
+    }
+
+    if not selected_months:
+        return 'All Months'
+
+    return ', '.join([
+        month_names.get(month, month)
+        for month in selected_months
+    ])
 
 
-def get_selected_filters(request):
-    selected_years = [
-        year for year in request.GET.getlist('years')
-        if year.isdigit()
-    ]
-    selected_countries = [
-        country.strip() for country in request.GET.getlist('countries')
-        if country.strip()
-    ]
-    return selected_years, selected_countries
+def selected_channels_label(selected_channels):
+    channel_names = {
+        '1': 'Online',
+        '0': 'Reseller',
+    }
+
+    if not selected_channels:
+        return 'All Channels'
+
+    return ', '.join([
+        channel_names.get(channel, channel)
+        for channel in selected_channels
+    ])
+
+
+def selected_customer_types_label(selected_customer_types):
+    type_names = {
+        'store': 'Store',
+        'individual': 'Individual',
+    }
+
+    if not selected_customer_types:
+        return 'All Types'
+
+    return ', '.join([
+        type_names.get(customer_type, customer_type)
+        for customer_type in selected_customer_types
+    ])
+
+
+def selected_categories_label(selected_categories, categories):
+    if not selected_categories:
+        return 'All Categories'
+
+    category_lookup = {
+        str(category['ProductCategoryID']): category['Name']
+        for category in categories
+    }
+
+    return ', '.join([
+        category_lookup.get(category, category)
+        for category in selected_categories
+    ])
 
 
 def build_sales_filter_clause(selected_years, selected_countries, order_alias='soh', territory_alias='st'):
@@ -249,7 +331,8 @@ def get_audit_page(action):
         'customers': 'Customers',
         'revenue': 'Revenue & Loss',
         'cost': 'Products',
-        'rbac': 'RBAC & Audit Logs',
+        'rbac': 'RBAC',
+        'audit': 'Audit Logs',
         'export': 'Export Reports',
         'login': 'Login',
         'logout': 'Logout',
@@ -273,6 +356,50 @@ def get_audit_result(status):
         return 500
 
     return 200
+
+
+def readable_audit_result(status):
+    status = status or ''
+
+    if status in ('LOGIN', 'LOGOUT', 'EXPORT') or '200' in status or 'ALLOWED' in status:
+        return 'Completed'
+    if 'DENIED' in status or '403' in status:
+        return 'Blocked'
+    if 'ERROR' in status or '500' in status:
+        return 'Failed'
+
+    return 'Recorded'
+
+
+def get_ordered_user_accounts():
+    account_order = [
+        'admin',
+        'manager',
+        'supervisor',
+        'financial_analyst',
+        'cost_analyst',
+        'customer_analyst',
+        'sales_analyst',
+    ]
+
+    accounts = {
+        account.username: account
+        for account in UserAccount.objects.exclude(role='Employee')
+    }
+
+    ordered_accounts = [
+        accounts[username]
+        for username in account_order
+        if username in accounts
+    ]
+
+    remaining_accounts = [
+        account
+        for username, account in accounts.items()
+        if username not in account_order
+    ]
+
+    return ordered_accounts + sorted(remaining_accounts, key=lambda account: account.username)
 
 
 # -------------------------------------------------------------------
@@ -467,6 +594,8 @@ def dashboard_overview(request):
         'countries': countries,
         'selected_years': selected_years,
         'selected_countries': selected_countries,
+        'selected_years_label': selected_years_label(selected_years),
+        'selected_countries_label': selected_countries_label(selected_countries),
         'revenue_by_country': revenue_by_country,
         'revenue_by_year': revenue_by_year,
         'top_territories': top_territories,
@@ -492,11 +621,11 @@ def dashboard_overview(request):
 
 
 # -------------------------------------------------------------------
-# Governance
+# Governance: RBAC Management
 # -------------------------------------------------------------------
-@require_module_access('rbac_audit')
-def rbac_audit(request):
-    ctx = get_user_context(request, active_page='rbac_audit')
+@require_module_access('rbac_management')
+def rbac_management(request):
+    ctx = get_user_context(request, active_page='rbac_management')
 
     try:
         seed_default_user_accounts()
@@ -507,7 +636,9 @@ def rbac_audit(request):
         if not ctx['can_edit_rbac']:
             return HttpResponse('RBAC edit denied for this role.', status=403)
 
+        action_type = request.POST.get('action_type', '').strip()
         username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
         role = request.POST.get('role', '').strip()
 
         selected_departments = [
@@ -525,44 +656,67 @@ def rbac_audit(request):
         department_value = ','.join(selected_departments)
 
         try:
-            account = UserAccount.objects.filter(username=username).first()
+            if action_type == 'create':
+                if username and password and role in Role_Permission:
+                    UserAccount.objects.create(
+                        username=username,
+                        password=password,
+                        role=role,
+                        department=department_value,
+                    )
+                    log_audit_event(
+                        request,
+                        request.session.get('active_role', 'Employee'),
+                        request.session.get('active_department', 'Sales'),
+                        'POST /rbac/',
+                        'ALLOWED (200)',
+                        f'Created account {username}'
+                    )
 
-            if account and role in Role_Permission:
-                account.role = role
-                account.department = department_value
-                account.save(update_fields=['role', 'department'])
+            elif action_type == 'update':
+                account = UserAccount.objects.filter(username=username).first()
 
-                log_audit_event(
-                    request,
-                    request.session.get('active_role', 'Employee'),
-                    request.session.get('active_department', 'Sales'),
-                    'POST /rbac-audit/',
-                    'ALLOWED (200)',
-                    f'Updated RBAC profile for {username}'
-                )
+                if account and role in Role_Permission:
+                    account.role = role
+                    account.department = department_value
+
+                    if password:
+                        account.password = password
+
+                    account.save(update_fields=['role', 'department', 'password'])
+
+                    log_audit_event(
+                        request,
+                        request.session.get('active_role', 'Employee'),
+                        request.session.get('active_department', 'Sales'),
+                        'POST /rbac/',
+                        'ALLOWED (200)',
+                        f'Updated account {username}'
+                    )
+
+            elif action_type == 'delete':
+                account = UserAccount.objects.filter(username=username).first()
+
+                if account and username != 'admin':
+                    account.delete()
+                    log_audit_event(
+                        request,
+                        request.session.get('active_role', 'Employee'),
+                        request.session.get('active_department', 'Sales'),
+                        'POST /rbac/',
+                        'ALLOWED (200)',
+                        f'Deleted account {username}'
+                    )
 
         except Exception as e:
-            ctx['db_warning'] = f'Unable to update RBAC assignment: {e}'
+            ctx['db_warning'] = f'Unable to save RBAC assignment: {e}'
 
-        return redirect('rbac_audit')
-
-    audit_logs = []
-    user_accounts = []
-
-    try:
-        audit_logs = AuditLog.objects.all()[:50] if ctx['can_view_audit'] else []
-
-        for log in audit_logs:
-            log.simple_action = simplify_audit_action(log.action)
-            log.page_name = get_audit_page(log.action)
-            log.result_code = get_audit_result(log.status)
-
-    except Exception as e:
-        ctx['db_warning'] = f'Unable to load audit logs: {e}'
+        return redirect('rbac_management')
 
     try:
         user_accounts = get_ordered_user_accounts()
     except Exception as e:
+        user_accounts = []
         ctx['db_warning'] = f'Unable to load user accounts. Run migrations. Details: {e}'
 
     ctx['role_matrix'] = {
@@ -571,10 +725,40 @@ def rbac_audit(request):
         if key != 'Employee'
     }
     ctx['departments'] = Departments
-    ctx['audit_logs'] = audit_logs
     ctx['user_accounts'] = user_accounts
 
-    return render(request, 'reports/rbac_audit.html', ctx)
+    return render(request, 'reports/rbac.html', ctx)
+
+
+# -------------------------------------------------------------------
+# Governance: Audit Logs
+# -------------------------------------------------------------------
+@require_module_access('audit_logs')
+def audit_logs_view(request):
+    ctx = get_user_context(request, active_page='audit_logs')
+
+    audit_logs = []
+
+    try:
+        audit_logs = AuditLog.objects.all()[:100] if ctx['can_view_audit'] else []
+
+        for log in audit_logs:
+            log.simple_action = simplify_audit_action(log.action)
+            log.page_name = get_audit_page(log.action)
+            log.result_code = get_audit_result(log.status)
+            log.result_label = readable_audit_result(log.status)
+
+    except Exception as e:
+        ctx['db_warning'] = f'Unable to load audit logs: {e}'
+
+    ctx['audit_logs'] = audit_logs
+
+    return render(request, 'reports/audit_logs.html', ctx)
+
+
+def reports_library(request):
+    return redirect('dashboard')
+
 
 # -------------------------------------------------------------------
 # Sales
@@ -584,9 +768,15 @@ def sales_dashboard(request):
     ctx = get_user_context(request, active_page='sales')
 
     selected_years, selected_countries = get_selected_filters(request)
+    selected_months = get_selected_months(request)
     selected_channels = get_selected_channels(request)
 
     where_clause, params = build_sales_filter_clause(selected_years, selected_countries)
+
+    if selected_months:
+        month_placeholders = ", ".join(["%s"] * len(selected_months))
+        where_clause += f" AND MONTH(soh.OrderDate) IN ({month_placeholders})"
+        params.extend([int(month) for month in selected_months])
 
     if selected_channels:
         channel_placeholders = ", ".join(["%s"] * len(selected_channels))
@@ -596,8 +786,25 @@ def sales_dashboard(request):
     sales_trends = []
     territory_data = []
     sales_customer_directory = []
+    country_performance = []
+    year_comparison = []
     available_years = []
     countries = []
+
+    month_options = [
+        {'value': '1', 'label': 'January'},
+        {'value': '2', 'label': 'February'},
+        {'value': '3', 'label': 'March'},
+        {'value': '4', 'label': 'April'},
+        {'value': '5', 'label': 'May'},
+        {'value': '6', 'label': 'June'},
+        {'value': '7', 'label': 'July'},
+        {'value': '8', 'label': 'August'},
+        {'value': '9', 'label': 'September'},
+        {'value': '10', 'label': 'October'},
+        {'value': '11', 'label': 'November'},
+        {'value': '12', 'label': 'December'},
+    ]
 
     try:
         with connections[DB_ALIAS].cursor() as cursor:
@@ -640,6 +847,36 @@ def sales_dashboard(request):
                 row['TotalSalesDisplay'] = money(row.get('TotalSales'))
 
             cursor.execute(f"""
+                SELECT
+                    st.CountryRegionCode,
+                    CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalSales,
+                    COUNT(soh.SalesOrderID) AS TotalOrders
+                FROM Sales.SalesOrderHeader soh
+                LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                WHERE {where_clause}
+                GROUP BY st.CountryRegionCode
+                ORDER BY TotalSales DESC
+            """, params)
+            country_performance = dictfetchall(cursor)
+
+            for row in country_performance:
+                row['CountryName'] = get_country_name(row.get('CountryRegionCode'))
+                row['TotalSalesDisplay'] = money(row.get('TotalSales'))
+                row['TotalOrdersDisplay'] = number(row.get('TotalOrders'))
+
+            cursor.execute(f"""
+                SELECT
+                    YEAR(soh.OrderDate) AS SalesYear,
+                    CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalSales
+                FROM Sales.SalesOrderHeader soh
+                LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                WHERE {where_clause}
+                GROUP BY YEAR(soh.OrderDate)
+                ORDER BY SalesYear
+            """, params)
+            year_comparison = dictfetchall(cursor)
+
+            cursor.execute(f"""
                 SELECT TOP 25
                     c.CustomerID,
                     st.Name AS TerritoryName,
@@ -665,11 +902,19 @@ def sales_dashboard(request):
         'sales_trends': sales_trends,
         'territory_data': territory_data,
         'sales_customer_directory': sales_customer_directory,
+        'country_performance': country_performance,
+        'year_comparison': year_comparison,
         'available_years': available_years,
         'countries': countries,
+        'month_options': month_options,
         'selected_years': selected_years,
         'selected_countries': selected_countries,
-        'selected_channel': selected_channels,
+        'selected_months': selected_months,
+        'selected_channels': selected_channels,
+        'selected_years_label': selected_years_label(selected_years),
+        'selected_countries_label': selected_countries_label(selected_countries),
+        'selected_months_label': selected_months_label(selected_months),
+        'selected_channels_label': selected_channels_label(selected_channels),
         'chart_labels': json.dumps([
             f"{row['SalesYear']}-{str(row['SalesMonth']).zfill(2)}"
             for row in sales_trends
@@ -685,6 +930,22 @@ def sales_dashboard(request):
         'territory_chart_values': json.dumps([
             float(row['TotalSales'])
             for row in territory_data
+        ]),
+        'country_chart_labels': json.dumps([
+            row['CountryName']
+            for row in country_performance
+        ]),
+        'country_chart_values': json.dumps([
+            float(row['TotalSales'])
+            for row in country_performance
+        ]),
+        'year_compare_labels': json.dumps([
+            str(row['SalesYear'])
+            for row in year_comparison
+        ]),
+        'year_compare_values': json.dumps([
+            float(row['TotalSales'])
+            for row in year_comparison
         ]),
     })
 
@@ -778,6 +1039,9 @@ def customer_profile(request):
         'selected_years': selected_years,
         'selected_countries': selected_countries,
         'selected_customer_types': selected_customer_types,
+        'selected_years_label': selected_years_label(selected_years),
+        'selected_countries_label': selected_countries_label(selected_countries),
+        'selected_customer_types_label': selected_customer_types_label(selected_customer_types),
         'can_view_customer_details': can_view_customer_details,
         'chart_labels': json.dumps([row['TerritoryName'] for row in active_customers]),
         'chart_values': json.dumps([int(row['ActiveCustomerCount']) for row in active_customers]),
@@ -803,8 +1067,8 @@ def revenue_loss(request):
     params = [top_n] + filter_params
 
     if selected_categories:
-        category_placeholders = ", ".join(["%s"] * len(selected_categories))
-        where_clause += f" AND pc.ProductCategoryID IN ({category_placeholders})"
+        placeholders = ", ".join(["%s"] * len(selected_categories))
+        where_clause += f" AND pc.ProductCategoryID IN ({placeholders})"
         params.extend([int(category) for category in selected_categories])
 
     revenue_data = []
@@ -845,6 +1109,8 @@ def revenue_loss(request):
     except Exception as e:
         ctx['db_warning'] = str(e)
 
+    selected_categories_display = selected_categories_label(selected_categories, categories)
+
     ctx.update({
         'revenue_data': revenue_data,
         'categories': categories,
@@ -853,6 +1119,9 @@ def revenue_loss(request):
         'selected_years': selected_years,
         'selected_countries': selected_countries,
         'selected_categories': selected_categories,
+        'selected_years_label': selected_years_label(selected_years),
+        'selected_countries_label': selected_countries_label(selected_countries),
+        'selected_categories_label': selected_categories_display,
         'top_n': str(top_n),
         'chart_labels': json.dumps([row['ProductName'][:22] for row in revenue_data]),
         'chart_net': json.dumps([float(row['NetRevenue']) for row in revenue_data]),
@@ -876,28 +1145,8 @@ def cost_report(request):
 
     where_clause, params = build_sales_filter_clause(selected_years, selected_countries)
 
-    conditions = [
-        where_clause,
-        "p.StandardCost > 0",
-        "p.ListPrice > 0",
-    ]
-
-    if selected_categories:
-        category_placeholders = ", ".join(["%s"] * len(selected_categories))
-        conditions.append(f"pc.ProductCategoryID IN ({category_placeholders})")
-        params.extend([int(category) for category in selected_categories])
-
-    if search_query:
-        conditions.append("(p.Name LIKE %s OR p.ProductNumber LIKE %s)")
-        params.extend([f"%{search_query}%", f"%{search_query}%"])
-
-    if min_margin_raw.isdigit():
-        conditions.append("(p.ListPrice - p.StandardCost) >= %s")
-        params.append(float(min_margin_raw))
-
-    final_where_clause = " AND ".join(conditions)
-
     cost_data = []
+    accessory_data = []
     categories = []
     available_years = []
     countries = []
@@ -909,24 +1158,41 @@ def cost_report(request):
             cursor.execute("SELECT ProductCategoryID, Name FROM Production.ProductCategory ORDER BY Name")
             categories = dictfetchall(cursor)
 
+            product_conditions = [
+                "p.StandardCost > 0",
+                "p.ListPrice > 0",
+            ]
+            product_params = []
+
+            if selected_categories:
+                placeholders = ", ".join(["%s"] * len(selected_categories))
+                product_conditions.append(f"pc.ProductCategoryID IN ({placeholders})")
+                product_params.extend([int(category) for category in selected_categories])
+
+            if search_query:
+                product_conditions.append("(p.Name LIKE %s OR p.ProductNumber LIKE %s)")
+                product_params.extend([f"%{search_query}%", f"%{search_query}%"])
+
+            if min_margin_raw.isdigit():
+                product_conditions.append("(p.ListPrice - p.StandardCost) >= %s")
+                product_params.append(float(min_margin_raw))
+
+            product_where_clause = " AND ".join(product_conditions)
+
             cursor.execute(f"""
-                SELECT TOP 25
+                SELECT
                     p.Name AS ProductName,
                     p.ProductNumber,
                     ISNULL(pc.Name, 'Uncategorized') AS CategoryName,
                     CAST(p.StandardCost AS DECIMAL(18, 2)) AS StandardCost,
                     CAST(p.ListPrice AS DECIMAL(18, 2)) AS ListPrice,
                     CAST((p.ListPrice - p.StandardCost) AS DECIMAL(18, 2)) AS UnitMargin
-                FROM Sales.SalesOrderDetail sod
-                INNER JOIN Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
-                LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
-                INNER JOIN Production.Product p ON sod.ProductID = p.ProductID
+                FROM Production.Product p
                 LEFT JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
                 LEFT JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
-                WHERE {final_where_clause}
-                GROUP BY p.Name, p.ProductNumber, pc.Name, p.StandardCost, p.ListPrice
-                ORDER BY p.StandardCost DESC
-            """, params)
+                WHERE {product_where_clause}
+                ORDER BY p.Name
+            """, product_params)
             cost_data = dictfetchall(cursor)
 
             for row in cost_data:
@@ -934,23 +1200,48 @@ def cost_report(request):
                 row['ListPriceDisplay'] = money(row.get('ListPrice'))
                 row['UnitMarginDisplay'] = money(row.get('UnitMargin'))
 
+            cursor.execute(f"""
+                SELECT
+                    ISNULL(pc.Name, 'Uncategorized') AS CategoryName,
+                    CAST(SUM(sod.LineTotal) AS DECIMAL(18, 2)) AS TotalRevenue,
+                    COUNT(DISTINCT p.ProductID) AS ProductCount
+                FROM Sales.SalesOrderDetail sod
+                INNER JOIN Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
+                LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                INNER JOIN Production.Product p ON sod.ProductID = p.ProductID
+                LEFT JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
+                LEFT JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
+                WHERE {where_clause}
+                GROUP BY pc.Name
+                ORDER BY TotalRevenue DESC
+            """, params)
+            accessory_data = dictfetchall(cursor)
+
     except Exception as e:
         ctx['db_warning'] = str(e)
 
+    selected_categories_display = selected_categories_label(selected_categories, categories)
+
     ctx.update({
         'cost_data': cost_data,
+        'accessory_data': accessory_data,
         'categories': categories,
         'available_years': available_years,
         'countries': countries,
         'selected_years': selected_years,
         'selected_countries': selected_countries,
         'selected_categories': selected_categories,
+        'selected_years_label': selected_years_label(selected_years),
+        'selected_countries_label': selected_countries_label(selected_countries),
+        'selected_categories_label': selected_categories_display,
         'search_query': search_query,
         'min_margin': min_margin_raw,
-        'chart_labels': json.dumps([row['ProductName'][:22] for row in cost_data]),
-        'chart_cost': json.dumps([float(row['StandardCost']) for row in cost_data]),
-        'chart_price': json.dumps([float(row['ListPrice']) for row in cost_data]),
-        'chart_margin': json.dumps([float(row['UnitMargin']) for row in cost_data]),
+        'chart_labels': json.dumps([row['ProductName'][:22] for row in cost_data[:25]]),
+        'chart_cost': json.dumps([float(row['StandardCost']) for row in cost_data[:25]]),
+        'chart_price': json.dumps([float(row['ListPrice']) for row in cost_data[:25]]),
+        'chart_margin': json.dumps([float(row['UnitMargin']) for row in cost_data[:25]]),
+        'accessory_chart_labels': json.dumps([row['CategoryName'] for row in accessory_data]),
+        'accessory_chart_values': json.dumps([float(row['TotalRevenue']) for row in accessory_data]),
     })
 
     return render(request, 'reports/cost.html', ctx)
@@ -1080,7 +1371,7 @@ def export_report(request, report_key, export_type):
 
             elif report_key == 'cost':
                 cursor.execute("""
-                    SELECT TOP 25
+                    SELECT
                         p.Name AS ProductName,
                         p.ProductNumber,
                         CAST(p.StandardCost AS DECIMAL(18, 2)) AS StandardCost,
@@ -1088,7 +1379,7 @@ def export_report(request, report_key, export_type):
                         CAST((p.ListPrice - p.StandardCost) AS DECIMAL(18, 2)) AS UnitMargin
                     FROM Production.Product p
                     WHERE p.StandardCost > 0 AND p.ListPrice > 0
-                    ORDER BY p.StandardCost DESC
+                    ORDER BY p.Name
                 """)
                 rows = dictfetchall(cursor)
 

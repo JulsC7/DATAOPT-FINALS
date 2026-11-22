@@ -1,0 +1,85 @@
+{% extends 'reports/base.html' %}
+{% load tz %}
+{% block title %}Audit Logs | AdventureWorks{% endblock %}
+{% block breadcrumb %}Governance / Audit Logs{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">Audit Logs</h1>
+        <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
+            Review page access, filtering, sign-in, sign-out, and export activity.
+        </p>
+    </div>
+
+    <span class="rounded-full bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300">
+        {{ audit_logs|length }} recent events
+    </span>
+</div>
+
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    {% if can_view_audit %}
+        <div class="overflow-x-auto max-h-[42rem]">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr>
+                        <th class="py-3 px-6">Timestamp</th>
+                        <th class="py-3 px-6">Username</th>
+                        <th class="py-3 px-6">Role</th>
+                        <th class="py-3 px-6">Page</th>
+                        <th class="py-3 px-6">Activity</th>
+                        <th class="py-3 px-6">Result</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for log in audit_logs %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-mono whitespace-nowrap">
+                            {{ log.timestamp|localtime|date:"Y-m-d H:i:s" }}
+                        </td>
+                        <td class="py-3 px-6 font-medium">
+                            {{ log.username }}
+                        </td>
+                        <td class="py-3 px-6">
+                            {{ log.role }}
+                        </td>
+                        <td class="py-3 px-6">
+                            {{ log.page_name }}
+                        </td>
+                        <td class="py-3 px-6">
+                            {{ log.simple_action }}
+                        </td>
+                        <td class="py-3 px-6">
+                            {% if log.result_code == 200 %}
+                                <span class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold">
+                                    {{ log.result_label }}
+                                </span>
+                            {% elif log.result_code == 403 %}
+                                <span class="px-2 py-1 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 font-semibold">
+                                    {{ log.result_label }}
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold">
+                                    {{ log.result_label }}
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-6 px-6 text-center text-slate-500">
+                            No audit logs yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="p-6 text-base text-slate-600 dark:text-slate-300">
+            Your current role cannot view audit log entries.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -16,8 +16,12 @@ urlpatterns = [
     path('revenue/', views.revenue_loss, name='revenue'),
     path('cost/', views.cost_report, name='cost'),
 
-    # Governance
-    path('rbac-audit/', views.rbac_audit, name='rbac_audit'),
+    # Governance pages
+    path('rbac/', views.rbac_management, name='rbac_management'),
+    path('audit-logs/', views.audit_logs_view, name='audit_logs'),
+
+    # Backward-compatible old route
+    path('rbac-audit/', views.rbac_management, name='rbac_audit'),
 
     # Export reports
     path('export/<str:report_key>/<str:export_type>/', views.export_report, name='export_report'),

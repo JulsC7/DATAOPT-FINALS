@@ -2,7 +2,7 @@ from functools import wraps
 from django.shortcuts import render, redirect
 from .models import AuditLog
 
-# departments
+
 Departments = {
     'All': {
         'label': 'All Departments',
@@ -26,14 +26,25 @@ Departments = {
     },
 }
 
-# roles/permissions
+
 Role_Permission = {
     'Administrator': {
         'title': 'Administrator',
         'tag': 'ADMINISTRATOR',
         'initials': 'AD',
         'scope': 'all',
-        'base_modules': ['dashboard', 'reports_library', 'sales', 'territories', 'customers', 'revenue', 'cost', 'rbac_audit'],
+        'base_modules': [
+            'dashboard',
+            'reports_library',
+            'sales',
+            'territories',
+            'customers',
+            'revenue',
+            'cost',
+            'rbac_audit',
+            'rbac_management',
+            'audit_logs',
+        ],
         'can_export': True,
         'can_manage_users': True,
         'can_edit_rbac': True,
@@ -50,7 +61,15 @@ Role_Permission = {
         'tag': 'MANAGER',
         'initials': 'MG',
         'scope': 'all',
-        'base_modules': ['dashboard', 'reports_library', 'sales', 'territories', 'customers', 'revenue', 'cost'],
+        'base_modules': [
+            'dashboard',
+            'reports_library',
+            'sales',
+            'territories',
+            'customers',
+            'revenue',
+            'cost',
+        ],
         'can_export': True,
         'can_manage_users': False,
         'can_edit_rbac': False,
@@ -152,7 +171,15 @@ Role_Permission = {
         'tag': 'EMPLOYEE',
         'initials': 'EM',
         'scope': 'all_aggregated',
-        'base_modules': ['dashboard', 'reports_library', 'sales', 'territories', 'customers', 'revenue', 'cost'],
+        'base_modules': [
+            'dashboard',
+            'reports_library',
+            'sales',
+            'territories',
+            'customers',
+            'revenue',
+            'cost',
+        ],
         'can_export': False,
         'can_manage_users': False,
         'can_edit_rbac': False,
@@ -187,7 +214,6 @@ def parse_departments(dept_key: str) -> list:
 
 
 def resolve_allowed_modules(role_key: str, dept_key: str) -> list:
-    """Computes permitted modules based on Role + Assigned Department(s)."""
     policy = Role_Permission.get(role_key, Role_Permission['Employee'])
     selected_departments = parse_departments(dept_key)
 
@@ -207,7 +233,6 @@ def resolve_allowed_modules(role_key: str, dept_key: str) -> list:
 
 
 def get_user_context(request, active_page=''):
-    """Unified template context builder used by all views and 403 handlers."""
     role_key = request.session.get('active_role', 'Employee')
     if role_key not in Role_Permission:
         role_key = 'Employee'
@@ -262,8 +287,8 @@ def log_audit_event(request, role_key, dept_key, action, status, detail):
             detail=detail,
         )
     except Exception:
-        # Keep the application usable even if the audit table is unavailable.
         pass
+
 
 def mask_person_name(first_name: str, last_name: str) -> str:
     f = (first_name[0] + '*' * max(len(first_name) - 1, 2)) if first_name else '***'
@@ -278,7 +303,6 @@ def mask_phone_number(phone: str) -> str:
 
 
 def require_module_access(module_key: str):
-    """Enforces login and checks Role + Department module permissions."""
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped(request, *args, **kwargs):
@@ -290,15 +314,38 @@ def require_module_access(module_key: str):
             policy = Role_Permission.get(role_key, Role_Permission['Employee'])
             allowed = resolve_allowed_modules(role_key, dept_key)
 
-            if module_key == 'rbac_audit' and not policy['can_view_rbac'] and not policy['can_view_audit']:
-                log_audit_event(request, role_key, dept_key, f"GET {request.path}", "DENIED (403)", "Unauthorized RBAC/Audit access")
-                ctx = get_user_context(request, active_page=module_key)
-                ctx['denied_module'] = "ROLES & AUDIT LOGS"
-                return render(request, 'reports/access_denied.html', ctx, status=403)
+            if module_key in ('rbac_audit', 'rbac_management', 'audit_logs'):
+                if module_key == 'rbac_management' and not policy['can_view_rbac'] and not policy['can_edit_rbac']:
+                    log_audit_event(
+                        request,
+                        role_key,
+                        dept_key,
+                        f"GET {request.path}",
+                        "DENIED (403)",
+                        "Unauthorized RBAC access"
+                    )
+                    ctx = get_user_context(request, active_page=module_key)
+                    ctx['denied_module'] = "RBAC MANAGEMENT"
+                    return render(request, 'reports/access_denied.html', ctx, status=403)
+
+                if module_key == 'audit_logs' and not policy['can_view_audit']:
+                    log_audit_event(
+                        request,
+                        role_key,
+                        dept_key,
+                        f"GET {request.path}",
+                        "DENIED (403)",
+                        "Unauthorized audit log access"
+                    )
+                    ctx = get_user_context(request, active_page=module_key)
+                    ctx['denied_module'] = "AUDIT LOGS"
+                    return render(request, 'reports/access_denied.html', ctx, status=403)
 
             if module_key not in allowed:
                 log_audit_event(
-                    request, role_key, dept_key,
+                    request,
+                    role_key,
+                    dept_key,
                     f"GET {request.path}",
                     "DENIED (403)",
                     f"{role_key} ({dept_key}) blocked from '{module_key}' module"
@@ -308,11 +355,15 @@ def require_module_access(module_key: str):
                 return render(request, 'reports/access_denied.html', ctx, status=403)
 
             log_audit_event(
-                request, role_key, dept_key,
+                request,
+                role_key,
+                dept_key,
                 f"GET {request.path}",
                 "ALLOWED (200)",
                 f"Accessed '{module_key}' module"
             )
             return view_func(request, *args, **kwargs)
+
         return _wrapped
+
     return decorator

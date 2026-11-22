@@ -5,38 +5,38 @@
 {% block content %}
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-slate-950 dark:text-white">Products</h1>
-        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Product cost, list price, and margin comparison by selected countries and years.
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">Products</h1>
+        <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
+            Full product list, cost comparison, and collective category performance.
         </p>
     </div>
 
     <div class="flex gap-3">
-        <a href="{% url 'export_report' 'cost' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+        <a href="{% url 'export_report' 'cost' 'csv' %}" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
             Export CSV
         </a>
-        <a href="{% url 'export_report' 'cost' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        <a href="{% url 'export_report' 'cost' 'pdf' %}" target="_blank" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm">
             Export PDF
         </a>
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-    <form method="GET" class="p-4 flex flex-col xl:flex-row xl:items-end gap-4">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <form method="GET" class="p-5 flex flex-col xl:flex-row xl:items-end gap-4">
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Year / Years
             </label>
 
-            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
                 <span>{% if selected_years %}{{ selected_years|length }} selected{% else %}All Years{% endif %}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for year in available_years %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
                         <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ year }}</span>
                     </label>
@@ -52,15 +52,15 @@
                 Country / Countries
             </label>
 
-            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
                 <span>{% if selected_countries %}{{ selected_countries|length }} selected{% else %}All Countries{% endif %}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for country in countries %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
                         <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ country.name }}</span>
                     </label>
@@ -71,100 +71,105 @@
             </div>
         </div>
 
-<div class="relative w-full xl:w-56">
-    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-        Category / Categories
-    </label>
-
-    <button type="button" onclick="toggleDropdown('categoriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-        <span>
-            {% if selected_categories %}
-                {{ selected_categories|length }} selected
-            {% else %}
-                All Categories
-            {% endif %}
-        </span>
-        <span class="text-slate-400">▾</span>
-    </button>
-
-    <div id="categoriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
-        <div class="p-2 space-y-1">
-            {% for category in categories %}
-            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <input
-                    type="checkbox"
-                    name="categories"
-                    value="{{ category.ProductCategoryID }}"
-                    {% if category.ProductCategoryID|stringformat:"s" in selected_categories %}checked{% endif %}
-                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                <span>{{ category.Name }}</span>
+        <div class="relative w-full xl:w-64">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Category / Categories
             </label>
-            {% empty %}
-            <div class="px-2 py-2 text-sm text-slate-500">No categories available</div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
 
-        <div class="w-full xl:w-56">
+            <button type="button" onclick="toggleDropdown('categoriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>
+                    {% if selected_categories %}
+                        {{ selected_categories|length }} selected
+                    {% else %}
+                        All Categories
+                    {% endif %}
+                </span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="categoriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for category in categories %}
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="categories" value="{{ category.ProductCategoryID }}" {% if category.ProductCategoryID|stringformat:"s" in selected_categories %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ category.Name }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No categories available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full xl:w-64">
             <label for="search" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Search
             </label>
-            <input id="search" name="search" value="{{ search_query }}" placeholder="Product name or number" class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
+            <input id="search" name="search" value="{{ search_query }}" placeholder="Product name or number" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
         </div>
 
         <div class="w-full xl:w-44">
             <label for="min_margin" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Min Margin
             </label>
-            <input id="min_margin" name="min_margin" value="{{ min_margin }}" placeholder="Example: 100" class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
+            <input id="min_margin" name="min_margin" value="{{ min_margin }}" placeholder="100" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
         </div>
 
         <div class="flex gap-3">
-            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            <button type="submit" class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                 Apply
             </button>
-            <a href="{% url 'cost' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <a href="{% url 'cost' %}" class="rounded-xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                 Clear
             </a>
         </div>
     </form>
 </div>
 
-<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Product Cost Chart
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-xl font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Product Cost Comparison
         </h3>
 
-        <div class="flex items-center gap-2">
-            <label for="costChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Chart Type
-            </label>
-            <select id="costChartType" onchange="changeCostChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <div class="flex justify-end mb-4">
+            <select id="costChartType" onchange="changeCostChartType()" class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-sm text-slate-700 dark:text-slate-200">
                 <option value="bar">Bar</option>
                 <option value="line">Line</option>
                 <option value="doughnut">Doughnut</option>
                 <option value="polarArea">Polar Area</option>
             </select>
         </div>
+
+        <div class="h-96">
+            <canvas id="costChart"></canvas>
+        </div>
     </div>
 
-    <div class="h-80">
-        <canvas id="costChart"></canvas>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-xl font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Collective Category Performance
+        </h3>
+
+        <div class="h-96">
+            <canvas id="accessoryChart"></canvas>
+        </div>
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-bold text-slate-950 dark:text-white">
             Product Cost Breakdown
         </h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Showing all matching products.
+        </p>
     </div>
 
-    <div class="overflow-x-auto max-h-96">
-        <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0">
+    <div class="overflow-x-auto max-h-[34rem]">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
                 <tr>
                     <th class="py-3 px-6">Product</th>
                     <th class="py-3 px-6">Product No.</th>
@@ -178,12 +183,12 @@
             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                 {% for row in cost_data %}
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                    <td class="py-2.5 px-6 font-medium">{{ row.ProductName }}</td>
-                    <td class="py-2.5 px-6 font-mono">{{ row.ProductNumber }}</td>
-                    <td class="py-2.5 px-6">{{ row.CategoryName }}</td>
-                    <td class="py-2.5 px-6 font-mono text-rose-700 dark:text-rose-300">${{ row.StandardCostDisplay }}</td>
-                    <td class="py-2.5 px-6 font-mono text-blue-700 dark:text-blue-300">${{ row.ListPriceDisplay }}</td>
-                    <td class="py-2.5 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.UnitMarginDisplay }}</td>
+                    <td class="py-3 px-6 font-medium">{{ row.ProductName }}</td>
+                    <td class="py-3 px-6 font-mono">{{ row.ProductNumber }}</td>
+                    <td class="py-3 px-6">{{ row.CategoryName }}</td>
+                    <td class="py-3 px-6 font-mono text-rose-700 dark:text-rose-300">${{ row.StandardCostDisplay }}</td>
+                    <td class="py-3 px-6 font-mono text-blue-700 dark:text-blue-300">${{ row.ListPriceDisplay }}</td>
+                    <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.UnitMarginDisplay }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -211,6 +216,16 @@
     const costValues = {{ chart_cost|default:"[]"|safe }};
     const priceValues = {{ chart_price|default:"[]"|safe }};
     const marginValues = {{ chart_margin|default:"[]"|safe }};
+    const accessoryLabels = {{ accessory_chart_labels|default:"[]"|safe }};
+    const accessoryValues = {{ accessory_chart_values|default:"[]"|safe }};
+
+    function shortNumber(value) {
+        const abs = Math.abs(Number(value));
+        if (abs >= 1000000000) return (Number(value) / 1000000000).toFixed(1) + 'B';
+        if (abs >= 1000000) return (Number(value) / 1000000).toFixed(1) + 'M';
+        if (abs >= 1000) return (Number(value) / 1000).toFixed(1) + 'K';
+        return Number(value).toLocaleString();
+    }
 
     function toggleDropdown(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
@@ -288,7 +303,14 @@
                 scales: isCircular ? {} : {
                     x: {
                         type: 'category',
-                        ticks: { color: axisColor },
+                        ticks: {
+                            color: axisColor,
+                            maxRotation: 0,
+                            callback: function(value) {
+                                const label = this.getLabelForValue(value);
+                                return label.length > 12 ? label.substring(0, 12) + '…' : label;
+                            }
+                        },
                         grid: { color: gridColor }
                     },
                     y: {
@@ -296,16 +318,14 @@
                         ticks: {
                             color: axisColor,
                             callback: function(value) {
-                                return '$' + Number(value).toLocaleString();
+                                return '$' + shortNumber(value);
                             }
                         },
                         grid: { color: gridColor }
                     }
                 },
                 plugins: {
-                    legend: {
-                        labels: { color: axisColor }
-                    }
+                    legend: { labels: { color: axisColor } }
                 }
             }
         });
@@ -314,6 +334,41 @@
     function changeCostChartType() {
         renderCostChart(document.getElementById('costChartType').value);
     }
+
+    new Chart(document.getElementById('accessoryChart'), {
+        type: 'bar',
+        data: {
+            labels: accessoryLabels,
+            datasets: [{
+                label: 'Total Revenue ($)',
+                data: accessoryValues,
+                backgroundColor: pageIsDark ? '#60a5fa' : '#2563eb',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: { color: axisColor },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    ticks: {
+                        color: axisColor,
+                        callback: function(value) {
+                            return '$' + shortNumber(value);
+                        }
+                    },
+                    grid: { color: gridColor }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: axisColor } }
+            }
+        }
+    });
 
     renderCostChart('bar');
 </script>
