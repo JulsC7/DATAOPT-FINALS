@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_key }} Export</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-white text-slate-900 p-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold">{{ report_key }} Report</h1>
+            <p class="text-sm text-slate-500">Printable export report</p>
+        </div>
+
+        <button onclick="window.print()" class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+            Print / Save as PDF
+        </button>
+    </div>
+
+    <table class="w-full text-left text-xs border border-slate-300">
+        <thead class="bg-slate-100">
+            {% if rows %}
+                <tr>
+                    {% for key, value in rows.0.items %}
+                        <th class="border border-slate-300 px-3 py-2">{{ key }}</th>
+                    {% endfor %}
+                </tr>
+            {% endif %}
+        </thead>
+
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    {% for key, value in row.items %}
+                        <td class="border border-slate-300 px-3 py-2">{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <tr>
+                    <td class="border border-slate-300 px-3 py-2">
+                        No data found.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
