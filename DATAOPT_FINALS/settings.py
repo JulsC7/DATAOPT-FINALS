@@ -77,7 +77,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'AdventureWorks2019',
-        'HOST': r'localhost', #CHANGE THIS INTO UR SERVER NAME SA SQL
+        'HOST': r'DESKTOP-OJUPP2D\ISINFOMDB', #CHANGE THIS INTO UR SERVER NAME SA SQL
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {

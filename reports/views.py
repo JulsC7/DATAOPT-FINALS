@@ -929,15 +929,30 @@ def sales_dashboard(request):
 
     where_clause, params = build_sales_filter_clause(selected_years, selected_countries)
 
+    # Special filters for territory (excludes countries by passing an empty list)
+    territory_where, territory_params = build_sales_filter_clause(selected_years, [])
+
     if selected_months:
         month_placeholders = ", ".join(["%s"] * len(selected_months))
-        where_clause += f" AND MONTH(soh.OrderDate) IN ({month_placeholders})"
-        params.extend([int(month) for month in selected_months])
+        month_sql = f" AND MONTH(soh.OrderDate) IN ({month_placeholders})"
+
+        where_clause += month_sql
+        territory_where += month_sql
+
+        month_ints = [int(month) for month in selected_months]
+        params.extend(month_ints)
+        territory_params.extend(month_ints)
 
     if selected_channels:
         channel_placeholders = ", ".join(["%s"] * len(selected_channels))
-        where_clause += f" AND soh.OnlineOrderFlag IN ({channel_placeholders})"
-        params.extend([int(channel) for channel in selected_channels])
+        channel_sql = f" AND soh.OnlineOrderFlag IN ({channel_placeholders})"
+
+        where_clause += channel_sql
+        territory_where += channel_sql
+
+        channel_ints = [int(channel) for channel in selected_channels]
+        params.extend(channel_ints)
+        territory_params.extend(channel_ints)
 
     sales_trends = []
     territory_data = []
@@ -992,10 +1007,10 @@ def sales_dashboard(request):
                     CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalSales
                 FROM Sales.SalesTerritory st
                 LEFT JOIN Sales.SalesOrderHeader soh ON st.TerritoryID = soh.TerritoryID
-                WHERE {where_clause}
+                WHERE {territory_where}
                 GROUP BY st.Name, st.CountryRegionCode, st.[Group]
                 ORDER BY TotalSales DESC
-            """, params)
+            """, territory_params)
             territory_data = dictfetchall(cursor)
 
             for row in territory_data:
@@ -1356,6 +1371,16 @@ def cost_report(request):
                 row['ListPriceDisplay'] = money(row.get('ListPrice'))
                 row['UnitMarginDisplay'] = money(row.get('UnitMargin'))
 
+                # --- START NEW CODE ---
+                accessory_where_clause = where_clause
+                accessory_params = list(params)  # Create a copy of the base params
+
+                if selected_categories:
+                    cat_placeholders = ", ".join(["%s"] * len(selected_categories))
+                    accessory_where_clause += f" AND pc.ProductCategoryID IN ({cat_placeholders})"
+                    accessory_params.extend([int(cat) for cat in selected_categories])
+                # --- END NEW CODE ---
+
             cursor.execute(f"""
                 SELECT
                     ISNULL(pc.Name, 'Uncategorized') AS CategoryName,
@@ -1367,10 +1392,10 @@ def cost_report(request):
                 INNER JOIN Production.Product p ON sod.ProductID = p.ProductID
                 LEFT JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
                 LEFT JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
-                WHERE {where_clause}
+                WHERE {accessory_where_clause}
                 GROUP BY pc.Name
                 ORDER BY TotalRevenue DESC
-            """, params)
+            """, accessory_params)
             accessory_data = dictfetchall(cursor)
 
     except Exception as e:
