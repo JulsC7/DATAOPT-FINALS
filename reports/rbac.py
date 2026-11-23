@@ -1,6 +1,18 @@
 from functools import wraps
 from django.shortcuts import render, redirect
-from .models import AuditLog
+from .models import AuditLog, RoleModulePermission
+
+
+ALL_MANAGEABLE_MODULES = [
+    ('dashboard', 'Dashboard'),
+    ('sales', 'Sales'),
+    ('territories', 'Territories'),
+    ('customers', 'Customers'),
+    ('revenue', 'Revenue & Loss'),
+    ('cost', 'Products'),
+    ('rbac_management', 'RBAC Management'),
+    ('audit_logs', 'Audit Logs'),
+]
 
 
 Departments = {
@@ -194,6 +206,38 @@ Role_Permission = {
 }
 
 
+def seed_default_role_permissions():
+    for role_key, policy in Role_Permission.items():
+        if role_key == 'Administrator':
+            continue
+        default_csv = ','.join(policy.get('base_modules', []))
+        RoleModulePermission.objects.get_or_create(
+            role_name=role_key,
+            defaults={'allowed_modules': default_csv}
+        )
+
+
+def get_role_modules(role_key: str) -> list:
+    policy = Role_Permission.get(role_key, Role_Permission['Employee'])
+    default_modules = list(policy.get('base_modules', []))
+
+    if role_key == 'Administrator':
+        return default_modules
+
+    try:
+        seed_default_role_permissions()
+        perm = RoleModulePermission.objects.filter(role_name=role_key).first()
+        if perm is not None:
+            modules = list(perm.module_list)
+            if 'dashboard' in modules and 'reports_library' not in modules:
+                modules.append('reports_library')
+            return modules
+    except Exception:
+        pass
+
+    return default_modules
+
+
 def parse_departments(dept_key: str) -> list:
     departments = [
         department.strip()
@@ -215,21 +259,22 @@ def parse_departments(dept_key: str) -> list:
 
 def resolve_allowed_modules(role_key: str, dept_key: str) -> list:
     policy = Role_Permission.get(role_key, Role_Permission['Employee'])
+    role_modules = get_role_modules(role_key)
     selected_departments = parse_departments(dept_key)
 
-    if 'All' in selected_departments or policy['scope'] in ('all', 'all_aggregated'):
-        return policy['base_modules']
+    if role_key == 'Administrator' or 'All' in selected_departments:
+        return role_modules
 
     if policy['scope'] == 'department':
-        combined_modules = list(policy['base_modules'])
-
+        combined_modules = list(role_modules)
         for department in selected_departments:
             dept_modules = Departments.get(department, Departments['Sales'])['modules']
-            combined_modules.extend(dept_modules)
+            for mod in dept_modules:
+                if mod in role_modules and mod not in combined_modules:
+                    combined_modules.append(mod)
+        return combined_modules
 
-        return list(dict.fromkeys(combined_modules))
-
-    return policy['base_modules']
+    return role_modules
 
 
 def get_user_context(request, active_page=''):
@@ -242,6 +287,8 @@ def get_user_context(request, active_page=''):
 
     policy = Role_Permission[role_key]
     allowed_modules = resolve_allowed_modules(role_key, dept_key)
+    can_view_rbac = policy['can_view_rbac'] or ('rbac_management' in allowed_modules)
+    can_view_audit = policy['can_view_audit'] or ('audit_logs' in allowed_modules)
 
     department_labels = [
         Departments[department]['label']
@@ -269,7 +316,8 @@ def get_user_context(request, active_page=''):
         'allowed_modules': allowed_modules,
         'policy': policy,
         'can_export': policy['can_export'],
-        'can_view_audit': policy['can_view_audit'],
+        'can_view_audit': can_view_audit,
+        'can_view_rbac': can_view_rbac,
         'can_edit_rbac': policy['can_edit_rbac'],
         'aggregated_only': policy['aggregated_only'],
         'active_page': active_page,
@@ -313,9 +361,11 @@ def require_module_access(module_key: str):
             dept_key = request.session.get('active_department', 'Sales')
             policy = Role_Permission.get(role_key, Role_Permission['Employee'])
             allowed = resolve_allowed_modules(role_key, dept_key)
+            can_view_rbac = policy['can_view_rbac'] or ('rbac_management' in allowed)
+            can_view_audit = policy['can_view_audit'] or ('audit_logs' in allowed)
 
             if module_key in ('rbac_audit', 'rbac_management', 'audit_logs'):
-                if module_key == 'rbac_management' and not policy['can_view_rbac'] and not policy['can_edit_rbac']:
+                if module_key == 'rbac_management' and not can_view_rbac and not policy['can_edit_rbac']:
                     log_audit_event(
                         request,
                         role_key,
@@ -328,7 +378,7 @@ def require_module_access(module_key: str):
                     ctx['denied_module'] = "RBAC MANAGEMENT"
                     return render(request, 'reports/access_denied.html', ctx, status=403)
 
-                if module_key == 'audit_logs' and not policy['can_view_audit']:
+                if module_key == 'audit_logs' and not can_view_audit:
                     log_audit_event(
                         request,
                         role_key,

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" id="html-root">
+<html lang="en" id="html-root" data-palette="default">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,22 +14,132 @@
             theme: {
                 extend: {
                     colors: {
-                        darkbg: '#0f172a',
+                        darkbg: '#0b1120',
                         sidebarbg: '#111827',
                         cardbg: '#1e293b',
                         bordercol: '#334155',
+                        brand: 'var(--accent-primary)',
+                        brandhover: 'var(--accent-hover)',
                     }
                 }
             }
         }
     </script>
+
+    <style>
+        :root,
+        [data-palette="default"] {
+            --accent-primary: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-soft-bg: rgba(37, 99, 235, 0.12);
+            --accent-soft-text: #1d4ed8;
+            --accent-ring: #3b82f6;
+        }
+        html.dark,
+        html.dark [data-palette="default"] {
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-soft-bg: rgba(59, 130, 246, 0.18);
+            --accent-soft-text: #93c5fd;
+            --accent-ring: #60a5fa;
+        }
+
+        [data-palette="high_contrast"] {
+            --accent-primary: #0f172a;
+            --accent-hover: #000000;
+            --accent-soft-bg: rgba(15, 23, 42, 0.14);
+            --accent-soft-text: #0f172a;
+            --accent-ring: #0f172a;
+        }
+        html.dark [data-palette="high_contrast"] {
+            --accent-primary: #f8fafc;
+            --accent-hover: #e2e8f0;
+            --accent-soft-bg: rgba(248, 250, 252, 0.16);
+            --accent-soft-text: #ffffff;
+            --accent-ring: #f8fafc;
+        }
+
+        [data-palette="emerald_teal"] {
+            --accent-primary: #0d9488;
+            --accent-hover: #0f766e;
+            --accent-soft-bg: rgba(13, 148, 136, 0.14);
+            --accent-soft-text: #0f766e;
+            --accent-ring: #14b8a6;
+        }
+        html.dark [data-palette="emerald_teal"] {
+            --accent-primary: #2dd4bf;
+            --accent-hover: #14b8a6;
+            --accent-soft-bg: rgba(45, 212, 191, 0.16);
+            --accent-soft-text: #5eead4;
+            --accent-ring: #2dd4bf;
+        }
+
+        [data-palette="colorblind_safe"] {
+            --accent-primary: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-soft-bg: rgba(79, 70, 229, 0.14);
+            --accent-soft-text: #4338ca;
+            --accent-ring: #6366f1;
+        }
+        html.dark [data-palette="colorblind_safe"] {
+            --accent-primary: #fbbf24;
+            --accent-hover: #f59e0b;
+            --accent-soft-bg: rgba(251, 191, 36, 0.18);
+            --accent-soft-text: #fcd34d;
+            --accent-ring: #fbbf24;
+        }
+
+        .accent-solid {
+            background-color: var(--accent-primary);
+            color: #ffffff;
+        }
+        html[data-palette="high_contrast"].dark .accent-solid,
+        html[data-palette="colorblind_safe"].dark .accent-solid {
+            color: #0b1120;
+        }
+        .accent-solid:hover {
+            background-color: var(--accent-hover);
+        }
+        .accent-nav-active {
+            background-color: var(--accent-soft-bg);
+            color: var(--accent-soft-text);
+            font-weight: 600;
+        }
+
+        html[data-density="compact"] table th,
+        html[data-density="compact"] table td {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+    </style>
+
+    <script>
+        (function() {
+            const root = document.getElementById('html-root');
+            const mode = localStorage.getItem('aw_theme_mode') || '{{ pref_theme_mode|default:"light" }}';
+            const palette = localStorage.getItem('aw_palette') || '{{ pref_palette|default:"default" }}';
+            const density = localStorage.getItem('aw_table_density') || '{{ pref_table_density|default:"comfortable" }}';
+
+            root.setAttribute('data-palette', palette);
+            root.setAttribute('data-density', density);
+
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const useDark = mode === 'dark' || (mode === 'system' && prefersDark);
+            if (useDark) {
+                root.classList.add('dark');
+            } else {
+                root.classList.remove('dark');
+            }
+        })();
+    </script>
 </head>
 
-<body class="bg-slate-100 dark:bg-darkbg text-slate-800 dark:text-slate-100 min-h-screen flex font-sans antialiased transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 min-h-screen flex font-sans antialiased transition-colors duration-200">
 
-        <aside class="w-72 h-screen sticky top-0 bg-white dark:bg-sidebarbg border-r border-slate-200 dark:border-bordercol flex flex-col justify-between shrink-0 select-none">        <div>
-            <div class="p-6 border-b border-slate-200 dark:border-bordercol flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-sm">
+    <aside class="w-72 h-screen sticky top-0 bg-white dark:bg-sidebarbg border-r border-slate-200 dark:border-bordercol flex flex-col justify-between shrink-0 select-none">
+        <div class="flex flex-col min-h-0 flex-1">
+            <div class="p-6 border-b border-slate-200 dark:border-bordercol flex items-center gap-3 shrink-0">
+                <div class="w-10 h-10 accent-solid rounded-xl flex items-center justify-center font-bold text-sm shadow-sm">
                     AW
                 </div>
 
@@ -43,53 +153,76 @@
                 </div>
             </div>
 
-            <div class="overflow-y-auto">
-
-            <nav class="py-4 px-3 space-y-1 text-sm font-medium">
-                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'dashboard' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+            <nav class="py-4 px-3 space-y-1 text-sm font-medium overflow-y-auto flex-1">
+                {% if 'dashboard' in allowed_modules %}
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'dashboard' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">📊</span>
                     <span>Dashboard</span>
                 </a>
+                {% endif %}
 
-                <a href="{% url 'revenue' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'revenue' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                {% if 'revenue' in allowed_modules %}
+                <a href="{% url 'revenue' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'revenue' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">💰</span>
                     <span>Revenue & Loss</span>
                 </a>
+                {% endif %}
 
-                <a href="{% url 'cost' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'cost' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                {% if 'cost' in allowed_modules %}
+                <a href="{% url 'cost' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'cost' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">📦</span>
                     <span>Products</span>
                 </a>
+                {% endif %}
 
-                <a href="{% url 'customers' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'customers' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                {% if 'customers' in allowed_modules %}
+                <a href="{% url 'customers' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'customers' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">👥</span>
                     <span>Customers</span>
                 </a>
+                {% endif %}
 
-                <a href="{% url 'sales' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'sales' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                {% if 'sales' in allowed_modules %}
+                <a href="{% url 'sales' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'sales' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">📈</span>
                     <span>Sales</span>
                 </a>
+                {% endif %}
 
+                {% if can_view_rbac or can_view_audit %}
                 <div class="pt-5 pb-2 px-4 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
                     Governance
                 </div>
+                {% endif %}
 
-                <a href="{% url 'rbac_management' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'rbac_management' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                {% if can_view_rbac %}
+                <a href="{% url 'rbac_management' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'rbac_management' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">🛡️</span>
                     <span>RBAC</span>
                 </a>
+                {% endif %}
 
-                <a href="{% url 'audit_logs' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'audit_logs' %}bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-semibold{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                {% if can_view_audit %}
+                <a href="{% url 'audit_logs' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'audit_logs' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
                     <span class="text-lg">🧾</span>
                     <span>Audit Logs</span>
+                </a>
+                {% endif %}
+
+                <div class="pt-5 pb-2 px-4 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                    Preferences
+                </div>
+
+                <a href="{% url 'settings' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'settings' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="text-lg">⚙️</span>
+                    <span>Settings</span>
                 </a>
             </nav>
         </div>
 
-        <div class="p-5 border-t border-slate-200 dark:border-bordercol text-xs space-y-3">
-            <div class="flex items-center gap-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
-                <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+        <div class="p-4 border-t border-slate-200 dark:border-bordercol text-xs space-y-2.5 shrink-0 bg-white dark:bg-sidebarbg">
+            <div class="flex items-center gap-3 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 p-3">
+                <div class="w-9 h-9 rounded-full accent-solid flex items-center justify-center font-bold text-xs shrink-0">
                     {{ initials }}
                 </div>
 
@@ -103,14 +236,14 @@
                 </div>
             </div>
 
-            <a href="{% url 'logout' %}" class="block text-center py-2 px-3 rounded-lg bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20 font-medium transition">
+            <a href="{% url 'logout' %}" class="block w-full text-center py-2.5 px-3 rounded-xl bg-rose-600/10 text-rose-700 dark:text-rose-300 hover:bg-rose-600/20 font-semibold transition">
                 Logout
             </a>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
-        <header class="h-16 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-8 flex items-center justify-between text-sm">
+        <header class="h-16 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-8 flex items-center justify-between text-sm shrink-0">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
                 <span class="text-slate-900 dark:text-white tracking-wider font-semibold">
                     ADVENTUREWORKS BI
@@ -121,25 +254,49 @@
                 </span>
             </div>
 
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300">
-                    <span class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                        {{ initials }}
-                    </span>
-                    <div class="leading-tight">
-                        <div class="font-semibold text-slate-900 dark:text-white">
-                            {{ username }}
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <button
+                        type="button"
+                        id="headerProfileBtn"
+                        onclick="toggleProfileMenu(event)"
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                        class="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 px-3 py-1.5 rounded-xl text-left text-slate-700 dark:text-slate-300 transition">
+                        <span class="w-7 h-7 rounded-full accent-solid flex items-center justify-center text-xs font-bold shrink-0">
+                            {{ initials }}
+                        </span>
+                        <div class="leading-tight pr-1">
+                            <div class="font-semibold text-slate-900 dark:text-white">
+                                {{ username }}
+                            </div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">
+                                {{ role_title }}
+                            </div>
                         </div>
-                        <div class="text-xs text-slate-500 dark:text-slate-400">
-                            {{ role_title }}
+                        <span class="text-slate-400 text-xs">▾</span>
+                    </button>
+
+                    <div
+                        id="headerProfileMenu"
+                        class="hidden absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl z-50 p-3 text-xs">
+                        <div class="pb-2.5 mb-2.5 border-b border-slate-200 dark:border-slate-700">
+                            <div class="font-bold text-sm text-slate-900 dark:text-white">{{ username }}</div>
+                            <div class="text-slate-600 dark:text-slate-300 mt-0.5">{{ role_title }}</div>
+                            <div class="text-slate-500 dark:text-slate-400 mt-0.5">Dept: {{ department_label }}</div>
+                        </div>
+                        <div class="space-y-1">
+                            <a href="{% url 'settings' %}" class="flex items-center justify-between rounded-xl px-3 py-2 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                <span>Workspace Settings</span>
+                                <span>⚙️</span>
+                            </a>
+                            <a href="{% url 'logout' %}" class="flex items-center justify-between rounded-xl px-3 py-2 font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-500/10 transition">
+                                <span>Logout</span>
+                                <span>↪</span>
+                            </a>
                         </div>
                     </div>
                 </div>
-
-                <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:border-blue-500 transition font-medium">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400" id="theme-indicator"></span>
-                    <span id="theme-text">Light Mode</span>
-                </button>
             </div>
         </header>
 
@@ -155,33 +312,45 @@
     </main>
 
     <script>
-        const savedTheme = localStorage.getItem('theme');
         const root = document.getElementById('html-root');
-        const themeText = document.getElementById('theme-text');
-        const themeIndicator = document.getElementById('theme-indicator');
 
-        function applyTheme(theme) {
-            if (theme === 'dark') {
+        function resolveIsDark(mode) {
+            if (mode === 'dark') return true;
+            if (mode === 'system') {
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            }
+            return false;
+        }
+
+        function applyThemeMode(mode) {
+            const validMode = ['light', 'dark', 'system'].includes(mode) ? mode : 'light';
+            localStorage.setItem('aw_theme_mode', validMode);
+            if (resolveIsDark(validMode)) {
                 root.classList.add('dark');
-                themeText.innerText = 'Dark Mode';
-                themeIndicator.classList.remove('bg-yellow-400');
-                themeIndicator.classList.add('bg-emerald-400');
-                localStorage.setItem('theme', 'dark');
             } else {
                 root.classList.remove('dark');
-                themeText.innerText = 'Light Mode';
-                themeIndicator.classList.remove('bg-emerald-400');
-                themeIndicator.classList.add('bg-yellow-400');
-                localStorage.setItem('theme', 'light');
             }
         }
 
-        function toggleTheme() {
-            const nextTheme = root.classList.contains('dark') ? 'light' : 'dark';
-            applyTheme(nextTheme);
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('headerProfileMenu');
+            const btn = document.getElementById('headerProfileBtn');
+            const isHidden = menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', !isHidden);
+            if (btn) btn.setAttribute('aria-expanded', String(isHidden));
         }
 
-        applyTheme(savedTheme || 'light');
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('headerProfileMenu');
+            const btn = document.getElementById('headerProfileBtn');
+            if (menu && !menu.classList.contains('hidden') && !menu.contains(event.target) && (!btn || !btn.contains(event.target))) {
+                menu.classList.add('hidden');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        applyThemeMode(localStorage.getItem('aw_theme_mode') || '{{ pref_theme_mode|default:"light" }}');
     </script>
 </body>
 </html>

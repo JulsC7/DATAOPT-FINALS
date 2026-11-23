@@ -126,7 +126,7 @@
     </form>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+<div class="grid grid-cols-1 gap-6">
     <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         <h3 class="text-center text-xl font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
             Product Cost Comparison
@@ -141,11 +141,13 @@
             </select>
         </div>
 
-        <div class="h-96">
+        <div class="h-[28rem]">
             <canvas id="costChart"></canvas>
         </div>
     </div>
+</div>
 
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         <h3 class="text-center text-xl font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
             Collective Category Performance
@@ -153,6 +155,16 @@
 
         <div class="h-96">
             <canvas id="accessoryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-xl font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4">
+            Product Count by Category
+        </h3>
+
+        <div class="h-96">
+            <canvas id="categoryCountChart"></canvas>
         </div>
     </div>
 </div>
@@ -218,6 +230,7 @@
     const marginValues = {{ chart_margin|default:"[]"|safe }};
     const accessoryLabels = {{ accessory_chart_labels|default:"[]"|safe }};
     const accessoryValues = {{ accessory_chart_values|default:"[]"|safe }};
+    const categoryCountValues = {{ category_count_chart_values|default:"[]"|safe }};
 
     function shortNumber(value) {
         const abs = Math.abs(Number(value));
@@ -308,7 +321,7 @@
                             maxRotation: 0,
                             callback: function(value) {
                                 const label = this.getLabelForValue(value);
-                                return label.length > 12 ? label.substring(0, 12) + '…' : label;
+                                return label.length > 14 ? label.substring(0, 14) + '…' : label;
                             }
                         },
                         grid: { color: gridColor }
@@ -355,10 +368,48 @@
                     grid: { color: gridColor }
                 },
                 y: {
+                    beginAtZero: true,
                     ticks: {
                         color: axisColor,
                         callback: function(value) {
                             return '$' + shortNumber(value);
+                        }
+                    },
+                    grid: { color: gridColor }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: axisColor } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('categoryCountChart'), {
+        type: 'bar',
+        data: {
+            labels: accessoryLabels,
+            datasets: [{
+                label: 'Products',
+                data: categoryCountValues,
+                backgroundColor: pageIsDark ? '#34d399' : '#059669',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: { color: axisColor },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: axisColor,
+                        precision: 0,
+                        callback: function(value) {
+                            return shortNumber(value);
                         }
                     },
                     grid: { color: gridColor }

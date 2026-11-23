@@ -77,7 +77,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'AdventureWorks2019',
-        'HOST': r'JULI', #CHANGE THIS INTO UR SERVER NAME SA SQL
+        'HOST': r'localhost', #CHANGE THIS INTO UR SERVER NAME SA SQL
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {

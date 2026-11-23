@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" id="html-root">
+<html lang="en" id="html-root" data-palette="default">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,24 +7,51 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class'
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0b1120',
+                        cardbg: '#111827',
+                    }
+                }
+            }
         }
     </script>
+    <style>
+        :root,
+        [data-palette="default"] {
+            --accent-primary: #2563eb;
+            --accent-hover: #1d4ed8;
+        }
+        html.dark,
+        html.dark [data-palette="default"] {
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+        .accent-solid {
+            background-color: var(--accent-primary);
+            color: #ffffff;
+        }
+        .accent-solid:hover {
+            background-color: var(--accent-hover);
+        }
+    </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-6 transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-6 transition-colors duration-200">
     <button
         type="button"
         onclick="toggleTheme()"
-        class="fixed top-4 right-4 flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        class="fixed top-4 right-4 flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-cardbg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         aria-label="Toggle light or dark mode">
-        <span id="theme-indicator" class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+        <span id="theme-indicator" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
         <span id="theme-text">Light Mode</span>
     </button>
 
     <main class="w-full max-w-md">
-        <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 shadow-xl dark:shadow-2xl transition-colors duration-200" aria-labelledby="login-heading">
+        <section class="bg-white dark:bg-cardbg border border-slate-200 dark:border-slate-700 rounded-2xl p-8 shadow-xl transition-colors duration-200" aria-labelledby="login-heading">
             <div class="flex items-center gap-3 mb-6">
-                <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white" aria-hidden="true">
+                <div class="w-12 h-12 rounded-xl accent-solid flex items-center justify-center font-bold text-white" aria-hidden="true">
                     AW
                 </div>
                 <div>
@@ -34,7 +61,7 @@
             </div>
 
             {% if error %}
-                <div class="mb-5 rounded-lg border border-red-300 dark:border-red-400 bg-red-50 dark:bg-red-950/60 px-4 py-3 text-sm text-red-700 dark:text-red-100" role="alert">
+                <div class="mb-5 rounded-xl border border-rose-300 dark:border-rose-500/60 bg-rose-50 dark:bg-rose-950/60 px-4 py-3 text-sm text-rose-700 dark:text-rose-200" role="alert">
                     {{ error }}
                 </div>
             {% endif %}
@@ -54,7 +81,7 @@
                         autocomplete="username"
                         required
                         aria-required="true"
-                        class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 text-base text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-base text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter your username">
                 </div>
 
@@ -69,13 +96,13 @@
                         autocomplete="current-password"
                         required
                         aria-required="true"
-                        class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 text-base text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-base text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter your password">
                 </div>
 
                 <button
                     type="submit"
-                    class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 font-semibold text-base text-white transition">
+                    class="w-full py-3 rounded-xl accent-solid font-semibold text-base transition">
                     Sign in
                 </button>
             </form>
@@ -88,18 +115,20 @@
         const themeIndicator = document.getElementById('theme-indicator');
 
         function applyTheme(theme) {
-            if (theme === 'dark') {
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+            if (isDark) {
                 root.classList.add('dark');
                 themeText.innerText = 'Dark Mode';
-                themeIndicator.classList.remove('bg-yellow-400');
+                themeIndicator.classList.remove('bg-amber-400');
                 themeIndicator.classList.add('bg-emerald-400');
-                localStorage.setItem('theme', 'dark');
+                localStorage.setItem('aw_theme_mode', 'dark');
             } else {
                 root.classList.remove('dark');
                 themeText.innerText = 'Light Mode';
                 themeIndicator.classList.remove('bg-emerald-400');
-                themeIndicator.classList.add('bg-yellow-400');
-                localStorage.setItem('theme', 'light');
+                themeIndicator.classList.add('bg-amber-400');
+                localStorage.setItem('aw_theme_mode', 'light');
             }
         }
 
@@ -108,7 +137,7 @@
             applyTheme(nextTheme);
         }
 
-        applyTheme(localStorage.getItem('theme') || 'light');
+        applyTheme(localStorage.getItem('aw_theme_mode') || 'light');
     </script>
 </body>
 </html>

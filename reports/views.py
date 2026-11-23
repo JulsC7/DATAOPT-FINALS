@@ -5,13 +5,16 @@ from django.db import connections
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
-from .models import AuditLog, UserAccount
+from .models import AuditLog, RoleModulePermission, UserAccount
 from .rbac import (
+    ALL_MANAGEABLE_MODULES,
     Departments,
     Role_Permission,
+    get_role_modules,
     get_user_context,
     log_audit_event,
     require_module_access,
+    seed_default_role_permissions,
 )
 
 
@@ -301,8 +304,10 @@ def render_csv_response(rows, filename):
     return response
 
 
-def simplify_audit_action(action):
+def simplify_audit_action(action, detail=''):
     action = action or ''
+    detail_str = str(detail or '')
+    detail_lower = detail_str.lower()
     lowered = action.lower()
 
     if 'login' in lowered:
@@ -311,12 +316,14 @@ def simplify_audit_action(action):
         return 'Signed out'
     if 'export' in lowered:
         return 'Exported report'
+    if 'rbac' in lowered or 'created account' in detail_lower or 'updated account' in detail_lower or 'deleted account' in detail_lower or 'updated role page access' in detail_lower:
+        return detail_str.strip() or 'Updated RBAC settings'
     if '?' in action:
         return 'Filtered data'
     if action.startswith('GET'):
         return 'Viewed page'
     if action.startswith('POST'):
-        return 'Updated settings'
+        return detail_str.strip() or 'Updated settings'
 
     return 'System activity'
 
@@ -333,6 +340,7 @@ def get_audit_page(action):
         'cost': 'Products',
         'rbac': 'RBAC',
         'audit': 'Audit Logs',
+        'settings': 'Settings',
         'export': 'Export Reports',
         'login': 'Login',
         'logout': 'Logout',
@@ -408,6 +416,7 @@ def get_ordered_user_accounts():
 def login_view(request):
     try:
         seed_default_user_accounts()
+        seed_default_role_permissions()
     except Exception:
         pass
 
@@ -484,6 +493,57 @@ def logout_view(request):
 
 
 # -------------------------------------------------------------------
+# Workspace Settings
+# -------------------------------------------------------------------
+def settings_view(request):
+    if not request.session.get('is_authenticated'):
+        return redirect('login')
+
+    ctx = get_user_context(request, active_page='settings')
+    saved = False
+
+    if request.method == 'POST':
+        theme_mode = request.POST.get('theme_mode', 'light').strip()
+        palette = request.POST.get('palette', 'default').strip()
+        kpi_format = request.POST.get('kpi_format', 'compact').strip()
+        table_density = request.POST.get('table_density', 'comfortable').strip()
+
+        if theme_mode not in ('light', 'dark', 'system'):
+            theme_mode = 'light'
+        if palette not in ('default', 'high_contrast', 'emerald_teal', 'colorblind_safe'):
+            palette = 'default'
+        if kpi_format not in ('compact', 'full'):
+            kpi_format = 'compact'
+        if table_density not in ('comfortable', 'compact'):
+            table_density = 'comfortable'
+
+        request.session['pref_theme_mode'] = theme_mode
+        request.session['pref_palette'] = palette
+        request.session['pref_kpi_format'] = kpi_format
+        request.session['pref_table_density'] = table_density
+
+        log_audit_event(
+            request,
+            ctx['active_role'],
+            ctx['active_department'],
+            'POST /settings/',
+            'ALLOWED (200)',
+            f"Updated preferences: theme={theme_mode}, palette={palette}, kpi={kpi_format}, density={table_density}"
+        )
+        saved = True
+
+    ctx.update({
+        'saved': saved,
+        'pref_theme_mode': request.session.get('pref_theme_mode', 'light'),
+        'pref_palette': request.session.get('pref_palette', 'default'),
+        'pref_kpi_format': request.session.get('pref_kpi_format', 'compact'),
+        'pref_table_density': request.session.get('pref_table_density', 'comfortable'),
+    })
+
+    return render(request, 'reports/settings.html', ctx)
+
+
+# -------------------------------------------------------------------
 # Dashboard
 # -------------------------------------------------------------------
 @require_module_access('dashboard')
@@ -506,6 +566,10 @@ def dashboard_overview(request):
     revenue_by_country = []
     revenue_by_year = []
     top_territories = []
+    is_single_year = len(selected_years) == 1
+    single_year_label = selected_years[0] if is_single_year else ''
+    year_chart_labels_list = []
+    year_chart_values_list = []
 
     try:
         with connections[DB_ALIAS].cursor() as cursor:
@@ -546,18 +610,53 @@ def dashboard_overview(request):
                 row['TotalRevenueDisplay'] = money(row.get('TotalRevenue'))
                 row['TotalOrdersDisplay'] = number(row.get('TotalOrders'))
 
-            cursor.execute(f"""
-                SELECT
-                    YEAR(soh.OrderDate) AS SalesYear,
-                    CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
-                    COUNT(soh.SalesOrderID) AS TotalOrders
-                FROM Sales.SalesOrderHeader soh
-                LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
-                WHERE {where_clause}
-                GROUP BY YEAR(soh.OrderDate)
-                ORDER BY SalesYear
-            """, params)
-            revenue_by_year = dictfetchall(cursor)
+            if is_single_year:
+                cursor.execute(f"""
+                    SELECT
+                        MONTH(soh.OrderDate) AS SalesMonth,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
+                        COUNT(soh.SalesOrderID) AS TotalOrders
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY MONTH(soh.OrderDate)
+                    ORDER BY SalesMonth
+                """, params)
+                monthly_rows = dictfetchall(cursor)
+                month_labels_map = {
+                    1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+                    7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec',
+                }
+                revenue_by_year = monthly_rows
+                year_chart_labels_list = [
+                    month_labels_map.get(int(row['SalesMonth']), str(row['SalesMonth']))
+                    for row in monthly_rows
+                ]
+                year_chart_values_list = [
+                    float(row['TotalRevenue'])
+                    for row in monthly_rows
+                ]
+            else:
+                cursor.execute(f"""
+                    SELECT
+                        YEAR(soh.OrderDate) AS SalesYear,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
+                        COUNT(soh.SalesOrderID) AS TotalOrders
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY YEAR(soh.OrderDate)
+                    ORDER BY SalesYear
+                """, params)
+                revenue_by_year = dictfetchall(cursor)
+                year_chart_labels_list = [
+                    str(row['SalesYear'])
+                    for row in revenue_by_year
+                ]
+                year_chart_values_list = [
+                    float(row['TotalRevenue'])
+                    for row in revenue_by_year
+                ]
 
             cursor.execute(f"""
                 SELECT TOP 5
@@ -588,6 +687,13 @@ def dashboard_overview(request):
     kpi['avg_order_value_display'] = money(kpi.get('avg_order_value'))
     kpi['online_orders_display'] = number(kpi.get('online_orders'))
 
+    kpi['total_revenue_compact'] = compact_number(kpi.get('total_revenue'))
+    kpi['total_orders_compact'] = compact_number(kpi.get('total_orders'))
+    kpi['active_customers_compact'] = compact_number(kpi.get('active_customers'))
+    kpi['countries_compact'] = compact_number(kpi.get('countries'))
+    kpi['avg_order_value_compact'] = compact_number(kpi.get('avg_order_value'))
+    kpi['online_orders_compact'] = compact_number(kpi.get('online_orders'))
+
     ctx.update({
         'kpi': kpi,
         'available_years': available_years,
@@ -596,6 +702,8 @@ def dashboard_overview(request):
         'selected_countries': selected_countries,
         'selected_years_label': selected_years_label(selected_years),
         'selected_countries_label': selected_countries_label(selected_countries),
+        'is_single_year': is_single_year,
+        'single_year_label': single_year_label,
         'revenue_by_country': revenue_by_country,
         'revenue_by_year': revenue_by_year,
         'top_territories': top_territories,
@@ -607,14 +715,8 @@ def dashboard_overview(request):
             float(row['TotalRevenue'])
             for row in revenue_by_country
         ]),
-        'year_chart_labels': json.dumps([
-            str(row['SalesYear'])
-            for row in revenue_by_year
-        ]),
-        'year_chart_values': json.dumps([
-            float(row['TotalRevenue'])
-            for row in revenue_by_year
-        ]),
+        'year_chart_labels': json.dumps(year_chart_labels_list),
+        'year_chart_values': json.dumps(year_chart_values_list),
     })
 
     return render(request, 'reports/dashboard.html', ctx)
@@ -629,8 +731,9 @@ def rbac_management(request):
 
     try:
         seed_default_user_accounts()
+        seed_default_role_permissions()
     except Exception as e:
-        ctx['db_warning'] = f'User account table is not ready yet. Run migrations. Details: {e}'
+        ctx['db_warning'] = f'User account or role permission table is not ready yet. Run migrations. Details: {e}'
 
     if request.method == 'POST':
         if not ctx['can_edit_rbac']:
@@ -670,20 +773,37 @@ def rbac_management(request):
                         request.session.get('active_department', 'Sales'),
                         'POST /rbac/',
                         'ALLOWED (200)',
-                        f'Created account {username}'
+                        f"Created account '{username}' with role '{role}' and department(s) '{department_value}'"
                     )
 
             elif action_type == 'update':
                 account = UserAccount.objects.filter(username=username).first()
 
                 if account and role in Role_Permission:
+                    old_role = account.role
+                    old_dept = account.department
+                    old_password = account.password
+
+                    changes = []
+                    if old_role != role:
+                        changes.append(f"role '{old_role}' -> '{role}'")
+                    if old_dept != department_value:
+                        changes.append(f"department '{old_dept}' -> '{department_value}'")
+                    if password and password != old_password:
+                        changes.append("changed password")
+
                     account.role = role
                     account.department = department_value
-
                     if password:
                         account.password = password
 
                     account.save(update_fields=['role', 'department', 'password'])
+
+                    detail_msg = (
+                        f"Updated account '{username}' ({', '.join(changes)})"
+                        if changes
+                        else f"Updated account '{username}' (no field changes)"
+                    )
 
                     log_audit_event(
                         request,
@@ -691,13 +811,14 @@ def rbac_management(request):
                         request.session.get('active_department', 'Sales'),
                         'POST /rbac/',
                         'ALLOWED (200)',
-                        f'Updated account {username}'
+                        detail_msg
                     )
 
             elif action_type == 'delete':
                 account = UserAccount.objects.filter(username=username).first()
 
                 if account and username != 'admin':
+                    deleted_role = account.role
                     account.delete()
                     log_audit_event(
                         request,
@@ -705,7 +826,37 @@ def rbac_management(request):
                         request.session.get('active_department', 'Sales'),
                         'POST /rbac/',
                         'ALLOWED (200)',
-                        f'Deleted account {username}'
+                        f"Deleted account '{username}' (was role '{deleted_role}')"
+                    )
+
+            elif action_type == 'update_role_modules':
+                target_role = request.POST.get('role_name', '').strip()
+                valid_module_keys = [m[0] for m in ALL_MANAGEABLE_MODULES]
+                selected_modules = [
+                    mod.strip()
+                    for mod in request.POST.getlist('modules')
+                    if mod.strip() in valid_module_keys
+                ]
+
+                if target_role in Role_Permission and target_role != 'Administrator':
+                    if 'dashboard' not in selected_modules:
+                        selected_modules.insert(0, 'dashboard')
+                    if 'reports_library' not in selected_modules:
+                        selected_modules.append('reports_library')
+
+                    modules_csv = ','.join(selected_modules)
+                    perm_obj, _ = RoleModulePermission.objects.get_or_create(role_name=target_role)
+                    old_modules_csv = perm_obj.allowed_modules
+                    perm_obj.allowed_modules = modules_csv
+                    perm_obj.save(update_fields=['allowed_modules'])
+
+                    log_audit_event(
+                        request,
+                        request.session.get('active_role', 'Employee'),
+                        request.session.get('active_department', 'Sales'),
+                        'POST /rbac/',
+                        'ALLOWED (200)',
+                        f"Updated role page access for '{target_role}': '{old_modules_csv}' -> '{modules_csv}'"
                     )
 
         except Exception as e:
@@ -719,13 +870,18 @@ def rbac_management(request):
         user_accounts = []
         ctx['db_warning'] = f'Unable to load user accounts. Run migrations. Details: {e}'
 
-    ctx['role_matrix'] = {
-        key: value
-        for key, value in Role_Permission.items()
-        if key != 'Employee'
-    }
+    role_matrix = {}
+    for key, value in Role_Permission.items():
+        if key == 'Employee':
+            continue
+        entry = dict(value)
+        entry['effective_modules'] = get_role_modules(key)
+        role_matrix[key] = entry
+
+    ctx['role_matrix'] = role_matrix
     ctx['departments'] = Departments
     ctx['user_accounts'] = user_accounts
+    ctx['manageable_modules'] = ALL_MANAGEABLE_MODULES
 
     return render(request, 'reports/rbac.html', ctx)
 
@@ -740,10 +896,10 @@ def audit_logs_view(request):
     audit_logs = []
 
     try:
-        audit_logs = AuditLog.objects.all()[:100] if ctx['can_view_audit'] else []
+        audit_logs = list(AuditLog.objects.all()[:100]) if ctx['can_view_audit'] else []
 
         for log in audit_logs:
-            log.simple_action = simplify_audit_action(log.action)
+            log.simple_action = simplify_audit_action(log.action, log.detail)
             log.page_name = get_audit_page(log.action)
             log.result_code = get_audit_result(log.status)
             log.result_label = readable_audit_result(log.status)
@@ -1242,6 +1398,7 @@ def cost_report(request):
         'chart_margin': json.dumps([float(row['UnitMargin']) for row in cost_data[:25]]),
         'accessory_chart_labels': json.dumps([row['CategoryName'] for row in accessory_data]),
         'accessory_chart_values': json.dumps([float(row['TotalRevenue']) for row in accessory_data]),
+        'category_count_chart_values': json.dumps([int(row['ProductCount']) for row in accessory_data]),
     })
 
     return render(request, 'reports/cost.html', ctx)

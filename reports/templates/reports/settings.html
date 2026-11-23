@@ -1,0 +1,117 @@
+{% extends 'reports/base.html' %}
+{% block title %}Settings | AdventureWorks{% endblock %}
+{% block breadcrumb %}Preferences / Settings{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">
+            Workspace Settings
+        </h1>
+        <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
+            Customize theme mode, accessible color palettes, and display density.
+        </p>
+    </div>
+</div>
+
+{% if saved %}
+<div class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200" role="status">
+    Preferences saved and applied across your session.
+</div>
+{% endif %}
+
+<form method="POST" class="space-y-6">
+    {% csrf_token %}
+
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-6">
+        <div>
+            <h2 class="text-lg font-bold text-slate-950 dark:text-white">Appearance & Accessibility</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Choose a theme mode and high-contrast or colorblind-friendly accent palette.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="theme_mode" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Theme Mode
+                </label>
+                <select
+                    id="theme_mode"
+                    name="theme_mode"
+                    onchange="previewSettings()"
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
+                    <option value="light" {% if pref_theme_mode == 'light' %}selected{% endif %}>Light Mode</option>
+                    <option value="dark" {% if pref_theme_mode == 'dark' %}selected{% endif %}>Dark Mode</option>
+                    <option value="system" {% if pref_theme_mode == 'system' %}selected{% endif %}>System Default</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="palette" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Accessible Color Palette
+                </label>
+                <select
+                    id="palette"
+                    name="palette"
+                    onchange="previewSettings()"
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
+                    <option value="default" {% if pref_palette == 'default' %}selected{% endif %}>Default Blue</option>
+                    <option value="high_contrast" {% if pref_palette == 'high_contrast' %}selected{% endif %}>High-Contrast Accessible</option>
+                    <option value="emerald_teal" {% if pref_palette == 'emerald_teal' %}selected{% endif %}>Emerald / Teal</option>
+                    <option value="colorblind_safe" {% if pref_palette == 'colorblind_safe' %}selected{% endif %}>Colorblind-Safe (Indigo / Amber)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="kpi_format" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Dashboard KPI Number Format
+                </label>
+                <select
+                    id="kpi_format"
+                    name="kpi_format"
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
+                    <option value="compact" {% if pref_kpi_format == 'compact' %}selected{% endif %}>Compact (e.g., 123.2M, 31.5K)</option>
+                    <option value="full" {% if pref_kpi_format == 'full' %}selected{% endif %}>Full Numbers</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="table_density" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Table Row Density
+                </label>
+                <select
+                    id="table_density"
+                    name="table_density"
+                    onchange="previewSettings()"
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
+                    <option value="comfortable" {% if pref_table_density == 'comfortable' %}selected{% endif %}>Comfortable</option>
+                    <option value="compact" {% if pref_table_density == 'compact' %}selected{% endif %}>Compact</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+            <button type="submit" class="rounded-xl accent-solid px-6 py-2.5 text-sm font-semibold shadow-sm transition">
+                Save Settings
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    function previewSettings() {
+        const mode = document.getElementById('theme_mode').value;
+        const palette = document.getElementById('palette').value;
+        const density = document.getElementById('table_density').value;
+
+        localStorage.setItem('aw_palette', palette);
+        localStorage.setItem('aw_table_density', density);
+        document.getElementById('html-root').setAttribute('data-palette', palette);
+        document.getElementById('html-root').setAttribute('data-density', density);
+        applyThemeMode(mode);
+    }
+</script>
+{% endblock %}

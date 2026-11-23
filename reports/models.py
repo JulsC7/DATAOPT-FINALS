@@ -40,3 +40,22 @@ class UserAccount(models.Model):
 
     def __str__(self):
         return f"{self.username} - {self.role}"
+
+
+class RoleModulePermission(models.Model):
+    role_name = models.CharField(max_length=50, unique=True)
+    allowed_modules = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['role_name']
+
+    @property
+    def module_list(self):
+        return [
+            module.strip()
+            for module in str(self.allowed_modules or '').split(',')
+            if module.strip()
+        ]
+
+    def __str__(self):
+        return f"{self.role_name}: {self.allowed_modules}"
