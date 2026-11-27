@@ -22,7 +22,7 @@
             RBAC Management
         </h1>
         <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
-            Add, edit, and remove user accounts, roles, department assignments, and role page access.
+            Add, edit, and remove user accounts, role checkboxes, department assignments, and role page access.
         </p>
     </div>
 </div>
@@ -34,7 +34,7 @@
             Add New Account
         </h2>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Create a new application user and assign role-based access.
+            Create a new application user and select role(s) and department(s) via dropdown checkboxes.
         </p>
     </div>
 
@@ -69,35 +69,32 @@
 
         <div class="relative w-full">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Role
+                Role(s)
             </label>
-            <input
-                type="hidden"
-                id="new_role"
-                name="role"
-                value="{% for role_key, role_info in role_matrix.items %}{% if forloop.first %}{{ role_key }}{% endif %}{% endfor %}">
 
             <button
                 type="button"
-                onclick="toggleDropdown('newRoleDropdown')"
+                onclick="toggleDropdown('newAccountRolesDropdown')"
                 class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                <span id="new_role_label" class="truncate">
-                    {% for role_key, role_info in role_matrix.items %}{% if forloop.first %}{{ role_info.title }}{% endif %}{% empty %}Select role{% endfor %}
-                </span>
+                <span id="newAccountRolesLabel" class="truncate">Select role(s)</span>
                 <span class="text-slate-400 ml-2">▾</span>
             </button>
 
             <div
-                id="newRoleDropdown"
+                id="newAccountRolesDropdown"
                 class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
-                <div class="p-1.5 space-y-1">
+                <div class="p-2 space-y-1">
                     {% for role_key, role_info in role_matrix.items %}
-                    <button
-                        type="button"
-                        onclick="selectSingleOption('new_role', '{{ role_key|escapejs }}', '{{ role_info.title|escapejs }}', 'newRoleDropdown')"
-                        class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                        {{ role_info.title }}
-                    </button>
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="roles"
+                            value="{{ role_key }}"
+                            data-label="{{ role_info.title }}"
+                            onchange="updateMultiSelectLabel('newAccountRolesDropdown', 'newAccountRolesLabel', 'Select role(s)')"
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ role_info.title }}</span>
+                    </label>
                     {% endfor %}
                 </div>
             </div>
@@ -154,7 +151,7 @@
                 User Role Assignments
             </h2>
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Manage existing account roles, passwords, and department access.
+                Manage existing account roles, passwords, and department access via dropdown checkboxes.
             </p>
         </div>
 
@@ -226,7 +223,7 @@
             <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 text-xs">
                 <tr>
                     <th class="py-3 px-6">Username</th>
-                    <th class="py-3 px-6">Role</th>
+                    <th class="py-3 px-6">Role(s)</th>
                     <th class="py-3 px-6">Department(s)</th>
                     <th class="py-3 px-6">Edit Assignment</th>
                     <th class="py-3 px-6">Delete</th>
@@ -246,7 +243,7 @@
 
                     <td class="py-4 px-6">
                         <span class="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-                            {{ account.role }}
+                            {{ account.role_display|default:account.role }}
                         </span>
                     </td>
 
@@ -260,6 +257,7 @@
                             type="button"
                             data-username="{{ account.username }}"
                             data-role="{{ account.role }}"
+                            data-roles="{{ account.role_list|join:',' }}"
                             data-departments="{{ account.department_list|join:',' }}"
                             onclick="openEditAccountModal(this)"
                             class="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition">
@@ -439,37 +437,37 @@
 
             <div class="relative w-full">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                    Role
+                    Role(s)
                 </label>
-                <input type="hidden" id="edit_role" name="role" value="">
 
                 <button
                     type="button"
-                    onclick="toggleDropdown('editRoleDropdown')"
+                    onclick="toggleDropdown('editRolesDropdown')"
                     class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                    <span id="edit_role_label" class="truncate">Select role</span>
+                    <span id="editRolesLabel" class="truncate">Select role(s)</span>
                     <span class="text-slate-400 ml-2">▾</span>
                 </button>
 
                 <div
-                    id="editRoleDropdown"
+                    id="editRolesDropdown"
                     class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-56 overflow-y-auto">
-                    <div class="p-1.5 space-y-1">
+                    <div class="p-2 space-y-1">
                         {% for role_key, role_info in role_matrix.items %}
-                        <button
-                            type="button"
-                            data-role-key="{{ role_key }}"
-                            data-role-title="{{ role_info.title }}"
-                            onclick="selectSingleOption('edit_role', '{{ role_key|escapejs }}', '{{ role_info.title|escapejs }}', 'editRoleDropdown')"
-                            class="edit-role-option w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                            {{ role_info.title }}
-                        </button>
+                        <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="roles"
+                                value="{{ role_key }}"
+                                data-label="{{ role_info.title }}"
+                                onchange="updateMultiSelectLabel('editRolesDropdown', 'editRolesLabel', 'Select role(s)')"
+                                class="edit-role-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span>{{ role_info.title }}</span>
+                        </label>
                         {% endfor %}
                     </div>
                 </div>
             </div>
 
-            <!-- Department(s) Dropdown: opens UPWARD (bottom-full mb-2) so it never clips at the bottom of the screen -->
             <div class="relative w-full">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     Department(s)
@@ -567,12 +565,6 @@
         dropdown.classList.toggle('hidden');
     }
 
-    function selectSingleOption(inputId, value, labelText, dropdownId) {
-        document.getElementById(inputId).value = value;
-        document.getElementById(inputId + '_label').textContent = labelText;
-        document.getElementById(dropdownId).classList.add('hidden');
-    }
-
     function updateMultiSelectLabel(dropdownId, labelId, placeholderText) {
         const container = document.getElementById(dropdownId);
         const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'));
@@ -583,7 +575,7 @@
         } else if (checked.length <= 2) {
             labelEl.textContent = checked.map(cb => cb.getAttribute('data-label') || cb.value).join(', ');
         } else {
-            labelEl.textContent = checked.length + ' departments selected';
+            labelEl.textContent = checked.length + ' selected';
         }
     }
 
@@ -642,16 +634,17 @@
 
     function openEditAccountModal(buttonEl) {
         const username = buttonEl.dataset.username;
-        const roleKey = buttonEl.dataset.role;
-        const userDepts = (buttonEl.dataset.departments || '').split(',').filter(Boolean);
+        const userRoles = (buttonEl.dataset.roles || buttonEl.dataset.role || '').split(',').map(r => r.trim()).filter(Boolean);
+        const userDepts = (buttonEl.dataset.departments || '').split(',').map(d => d.trim()).filter(Boolean);
 
         document.getElementById('edit_username').value = username;
         document.getElementById('edit_password').value = '';
         document.getElementById('editModalSubtitle').textContent = 'Updating account: ' + username;
 
-        document.getElementById('edit_role').value = roleKey;
-        const matchingRoleBtn = document.querySelector('.edit-role-option[data-role-key="' + roleKey + '"]');
-        document.getElementById('edit_role_label').textContent = matchingRoleBtn ? matchingRoleBtn.dataset.roleTitle : roleKey;
+        document.querySelectorAll('.edit-role-checkbox').forEach(function(cb) {
+            cb.checked = userRoles.includes(cb.value);
+        });
+        updateMultiSelectLabel('editRolesDropdown', 'editRolesLabel', 'Select role(s)');
 
         document.querySelectorAll('.edit-dept-checkbox').forEach(function(cb) {
             cb.checked = userDepts.includes(cb.value);
@@ -663,7 +656,7 @@
 
     function closeEditAccountModal() {
         document.getElementById('editAccountModal').classList.add('hidden');
-        document.getElementById('editRoleDropdown').classList.add('hidden');
+        document.getElementById('editRolesDropdown').classList.add('hidden');
         document.getElementById('editDepartmentsDropdown').classList.add('hidden');
     }
 
@@ -707,7 +700,7 @@
         const username = document.getElementById('edit_username').value;
         openConfirmModal({
             title: 'Save Account Changes?',
-            message: 'Are you sure you want to save the updated role, password, or department assignments for "' + username + '"?',
+            message: 'Are you sure you want to save the updated role(s), password, or department assignments for "' + username + '"?',
             variant: 'primary',
             confirmText: 'Yes, Save Changes',
             onConfirm: function() {

@@ -316,7 +316,16 @@ def simplify_audit_action(action, detail=''):
         return 'Signed out'
     if 'export' in lowered:
         return 'Exported report'
-    if 'rbac' in lowered or 'created account' in detail_lower or 'updated account' in detail_lower or 'deleted account' in detail_lower or 'updated role page access' in detail_lower:
+    if (
+        'rbac' in lowered
+        or 'added user' in detail_lower
+        or 'created account' in detail_lower
+        or 'updated user' in detail_lower
+        or 'updated account' in detail_lower
+        or 'deleted user' in detail_lower
+        or 'deleted account' in detail_lower
+        or 'updated role page access' in detail_lower
+    ):
         return detail_str.strip() or 'Updated RBAC settings'
     if '?' in action:
         return 'Filtered data'
@@ -721,18 +730,17 @@ def dashboard_overview(request):
 
     return render(request, 'reports/dashboard.html', ctx)
 
+
 # -------------------------------------------------------------------
 # Custom Editable Reports (Multi-Visual Composer)
 # -------------------------------------------------------------------
 AVAILABLE_WIDGETS = [
-    # Dashboard
     {'id': 'dash_kpis', 'label': 'Executive KPI Cards', 'module': 'dashboard', 'section': 'Dashboard'},
     {'id': 'dash_country_chart', 'label': 'Revenue by Country (Chart)', 'module': 'dashboard', 'section': 'Dashboard'},
     {'id': 'dash_year_chart', 'label': 'Revenue by Year (Chart)', 'module': 'dashboard', 'section': 'Dashboard'},
     {'id': 'dash_country_table', 'label': 'Country Revenue Breakdown (Table)', 'module': 'dashboard', 'section': 'Dashboard'},
     {'id': 'dash_territories_table', 'label': 'Top Territories (Table)', 'module': 'dashboard', 'section': 'Dashboard'},
 
-    # Sales Performance
     {'id': 'sales_trend_chart', 'label': 'Monthly Sales Trend (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
     {'id': 'sales_country_chart', 'label': 'Compare Country Performance (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
     {'id': 'sales_year_chart', 'label': 'Compare Sales by Year (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
@@ -741,16 +749,13 @@ AVAILABLE_WIDGETS = [
     {'id': 'sales_cust_dir_table', 'label': 'Sales Customer Directory (Table)', 'module': 'sales', 'section': 'Sales Performance'},
     {'id': 'sales_monthly_table', 'label': 'Monthly Sales Breakdown (Table)', 'module': 'sales', 'section': 'Sales Performance'},
 
-    # Customers
     {'id': 'cust_territory_chart', 'label': 'Active Customers by Territory (Chart)', 'module': 'customers', 'section': 'Customers'},
     {'id': 'cust_territory_table', 'label': 'Active Customers by Territory (Table)', 'module': 'customers', 'section': 'Customers'},
     {'id': 'cust_dir_table', 'label': 'Customer Directory (Table)', 'module': 'customers', 'section': 'Customers'},
 
-    # Revenue & Loss
     {'id': 'rev_loss_chart', 'label': 'Revenue and Discount Loss Chart', 'module': 'revenue', 'section': 'Revenue & Loss'},
     {'id': 'rev_loss_table', 'label': 'Revenue & Loss Breakdown (Table)', 'module': 'revenue', 'section': 'Revenue & Loss'},
 
-    # Products (Cost)
     {'id': 'cost_comp_chart', 'label': 'Product Cost Comparison (Chart)', 'module': 'cost', 'section': 'Products'},
     {'id': 'cost_cat_perf_chart', 'label': 'Collective Category Performance (Chart)', 'module': 'cost', 'section': 'Products'},
     {'id': 'cost_cat_count_chart', 'label': 'Product Count by Category (Chart)', 'module': 'cost', 'section': 'Products'},
@@ -764,7 +769,6 @@ def custom_reports_view(request):
     username = request.session.get('username', 'admin')
     allowed_modules = ctx.get('allowed_modules', [])
 
-    # RBAC filter: only show visuals from modules permitted for this user's role & department
     permitted_widgets = [
         w for w in AVAILABLE_WIDGETS
         if w['module'] in allowed_modules
@@ -889,26 +893,17 @@ def custom_reports_view(request):
     available_years = []
     countries = []
 
-    # Dashboard data
     kpi = {}
     revenue_by_country = []
     revenue_by_year = []
     top_territories = []
-
-    # Sales Performance data
     sales_trends = []
     country_performance = []
     territory_sales = []
     sales_customer_directory = []
-
-    # Customers data
     active_customers = []
     customer_directory = []
-
-    # Revenue & Loss data
     revenue_data = []
-
-    # Products (Cost) data
     cost_data = []
     accessory_data = []
 
@@ -916,7 +911,6 @@ def custom_reports_view(request):
         with connections[DB_ALIAS].cursor() as cursor:
             available_years, countries = load_years_and_countries(cursor)
 
-            # 1. Dashboard KPIs
             if 'dash_kpis' in selected_widgets:
                 cursor.execute(f"""
                     SELECT
@@ -946,7 +940,6 @@ def custom_reports_view(request):
                     'online_orders_compact': compact_number(row['online_orders']),
                 }
 
-            # 2. Dashboard / Sales Country Revenue
             if any(w in selected_widgets for w in ('dash_country_chart', 'dash_country_table', 'sales_country_chart', 'sales_country_table')):
                 cursor.execute(f"""
                     SELECT
@@ -965,7 +958,6 @@ def custom_reports_view(request):
                     r['TotalOrdersDisplay'] = number(r.get('TotalOrders'))
                     revenue_by_country.append(r)
 
-            # 3. Dashboard / Sales Year Comparison
             if any(w in selected_widgets for w in ('dash_year_chart', 'sales_year_chart')):
                 cursor.execute(f"""
                     SELECT
@@ -980,7 +972,6 @@ def custom_reports_view(request):
                 """, params)
                 revenue_by_year = dictfetchall(cursor)
 
-            # 4. Top Territories (Dashboard)
             if 'dash_territories_table' in selected_widgets:
                 cursor.execute(f"""
                     SELECT TOP 5
@@ -1000,7 +991,6 @@ def custom_reports_view(request):
                     r['TotalOrdersDisplay'] = number(r.get('TotalOrders'))
                     top_territories.append(r)
 
-            # 5. Monthly Sales Trend & Breakdown (Sales Performance)
             if any(w in selected_widgets for w in ('sales_trend_chart', 'sales_monthly_table')):
                 cursor.execute(f"""
                     SELECT
@@ -1019,7 +1009,6 @@ def custom_reports_view(request):
                     r['TotalSalesDisplay'] = money(r['TotalSales'])
                     sales_trends.append(r)
 
-            # 6. Sales by Territory Chart (Sales Performance)
             if 'sales_territory_chart' in selected_widgets:
                 cursor.execute(f"""
                     SELECT
@@ -1033,7 +1022,6 @@ def custom_reports_view(request):
                 """, params)
                 territory_sales = dictfetchall(cursor)
 
-            # 7. Sales Customer Directory (Sales Performance)
             if 'sales_cust_dir_table' in selected_widgets:
                 cursor.execute(f"""
                     SELECT TOP 25
@@ -1052,7 +1040,6 @@ def custom_reports_view(request):
                     r['LifetimeSpendDisplay'] = money(r['LifetimeSpend'])
                     sales_customer_directory.append(r)
 
-            # 8. Active Customers by Territory (Customers)
             if any(w in selected_widgets for w in ('cust_territory_chart', 'cust_territory_table')):
                 cursor.execute(f"""
                     SELECT
@@ -1070,7 +1057,6 @@ def custom_reports_view(request):
                     r['ActiveCustomerCountDisplay'] = number(r['ActiveCustomerCount'])
                     active_customers.append(r)
 
-            # 9. Customer Directory (Customers)
             if 'cust_dir_table' in selected_widgets and can_view_customer_details:
                 cursor.execute(f"""
                     SELECT DISTINCT TOP 25
@@ -1089,7 +1075,6 @@ def custom_reports_view(request):
                 """, params)
                 customer_directory = dictfetchall(cursor)
 
-            # 10. Revenue and Discount Loss (Revenue & Loss)
             if any(w in selected_widgets for w in ('rev_loss_chart', 'rev_loss_table')):
                 cursor.execute(f"""
                     SELECT TOP 15
@@ -1112,7 +1097,6 @@ def custom_reports_view(request):
                     r['DiscountLossDisplay'] = money(r['DiscountLoss'])
                     revenue_data.append(r)
 
-            # 11. Product Cost Comparison & Breakdown (Products)
             if any(w in selected_widgets for w in ('cost_comp_chart', 'cost_breakdown_table')):
                 cursor.execute("""
                     SELECT TOP 20
@@ -1134,7 +1118,6 @@ def custom_reports_view(request):
                     r['UnitMarginDisplay'] = money(r['UnitMargin'])
                     cost_data.append(r)
 
-            # 12. Collective Category Performance & Product Count by Category (Products)
             if any(w in selected_widgets for w in ('cost_cat_perf_chart', 'cost_cat_count_chart')):
                 cursor.execute(f"""
                     SELECT
@@ -1173,7 +1156,6 @@ def custom_reports_view(request):
         'can_delete_active': can_delete_active,
         'can_view_customer_details': can_view_customer_details,
 
-        # Dashboard data
         'kpi': kpi,
         'revenue_by_country': revenue_by_country,
         'top_territories': top_territories,
@@ -1182,7 +1164,6 @@ def custom_reports_view(request):
         'dash_year_labels': json.dumps([str(r['SalesYear']) for r in revenue_by_year]),
         'dash_year_values': json.dumps([float(r['TotalRevenue']) for r in revenue_by_year]),
 
-        # Sales Performance data
         'sales_trends': sales_trends,
         'sales_customer_directory': sales_customer_directory,
         'sales_trend_labels': json.dumps([f"{r['SalesYear']}-{int(r['SalesMonth']):02d}" for r in sales_trends]),
@@ -1190,19 +1171,16 @@ def custom_reports_view(request):
         'sales_territory_labels': json.dumps([r['TerritoryName'] for r in territory_sales]),
         'sales_territory_values': json.dumps([float(r['TotalSales']) for r in territory_sales]),
 
-        # Customers data
         'active_customers': active_customers,
         'customer_directory': customer_directory,
         'cust_territory_labels': json.dumps([r['TerritoryName'] for r in active_customers]),
         'cust_territory_values': json.dumps([int(r['ActiveCustomerCount']) for r in active_customers]),
 
-        # Revenue & Loss data
         'revenue_data': revenue_data,
         'rev_labels': json.dumps([r['ProductName'] for r in revenue_data]),
         'rev_net_values': json.dumps([float(r['NetRevenue']) for r in revenue_data]),
         'rev_loss_values': json.dumps([float(r['DiscountLoss']) for r in revenue_data]),
 
-        # Products data
         'cost_data': cost_data,
         'cost_labels': json.dumps([r['ProductName'] for r in cost_data[:12]]),
         'cost_values': json.dumps([float(r['StandardCost']) for r in cost_data[:12]]),
@@ -1214,6 +1192,7 @@ def custom_reports_view(request):
     })
 
     return render(request, 'reports/custom_reports.html', ctx)
+
 
 # -------------------------------------------------------------------
 # Governance: RBAC Management
@@ -1235,7 +1214,19 @@ def rbac_management(request):
         action_type = request.POST.get('action_type', '').strip()
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
-        role = request.POST.get('role', '').strip()
+
+        selected_roles = [
+            r.strip()
+            for r in request.POST.getlist('roles')
+            if r.strip() in Role_Permission and r.strip() != 'Employee'
+        ]
+        if not selected_roles:
+            single_role = request.POST.get('role', '').strip()
+            if single_role in Role_Permission and single_role != 'Employee':
+                selected_roles = [single_role]
+        if not selected_roles:
+            selected_roles = ['Sales Analyst']
+        role_value = ','.join(selected_roles)
 
         selected_departments = [
             department.strip()
@@ -1253,11 +1244,11 @@ def rbac_management(request):
 
         try:
             if action_type == 'create':
-                if username and password and role in Role_Permission:
+                if username and password:
                     UserAccount.objects.create(
                         username=username,
                         password=password,
-                        role=role,
+                        role=role_value,
                         department=department_value,
                     )
                     log_audit_event(
@@ -1266,26 +1257,26 @@ def rbac_management(request):
                         request.session.get('active_department', 'Sales'),
                         'POST /rbac/',
                         'ALLOWED (200)',
-                        f"Created account '{username}' with role '{role}' and department(s) '{department_value}'"
+                        f"Added user '{username}' with role(s) '{role_value}' and department(s) '{department_value}'"
                     )
 
             elif action_type == 'update':
                 account = UserAccount.objects.filter(username=username).first()
 
-                if account and role in Role_Permission:
+                if account:
                     old_role = account.role
                     old_dept = account.department
                     old_password = account.password
 
                     changes = []
-                    if old_role != role:
-                        changes.append(f"role '{old_role}' -> '{role}'")
+                    if old_role != role_value:
+                        changes.append(f"role '{old_role}' -> '{role_value}'")
                     if old_dept != department_value:
                         changes.append(f"department '{old_dept}' -> '{department_value}'")
                     if password and password != old_password:
                         changes.append("changed password")
 
-                    account.role = role
+                    account.role = role_value
                     account.department = department_value
                     if password:
                         account.password = password
@@ -1293,9 +1284,9 @@ def rbac_management(request):
                     account.save(update_fields=['role', 'department', 'password'])
 
                     detail_msg = (
-                        f"Updated account '{username}' ({', '.join(changes)})"
+                        f"Updated user '{username}' ({', '.join(changes)})"
                         if changes
-                        else f"Updated account '{username}' (no field changes)"
+                        else f"Updated user '{username}' (no field changes)"
                     )
 
                     log_audit_event(
@@ -1319,7 +1310,7 @@ def rbac_management(request):
                         request.session.get('active_department', 'Sales'),
                         'POST /rbac/',
                         'ALLOWED (200)',
-                        f"Deleted account '{username}' (was role '{deleted_role}')"
+                        f"Deleted user '{username}' (role '{deleted_role}')"
                     )
 
             elif action_type == 'update_role_modules':
@@ -1378,6 +1369,7 @@ def rbac_management(request):
 
     return render(request, 'reports/rbac.html', ctx)
 
+
 # -------------------------------------------------------------------
 # Governance: Audit Logs
 # -------------------------------------------------------------------
@@ -1420,8 +1412,6 @@ def sales_dashboard(request):
     selected_channels = get_selected_channels(request)
 
     where_clause, params = build_sales_filter_clause(selected_years, selected_countries)
-
-    # Special filters for territory (excludes countries by passing an empty list)
     territory_where, territory_params = build_sales_filter_clause(selected_years, [])
 
     if selected_months:
@@ -1863,15 +1853,13 @@ def cost_report(request):
                 row['ListPriceDisplay'] = money(row.get('ListPrice'))
                 row['UnitMarginDisplay'] = money(row.get('UnitMargin'))
 
-                # --- START NEW CODE ---
-                accessory_where_clause = where_clause
-                accessory_params = list(params)  # Create a copy of the base params
+            accessory_where_clause = where_clause
+            accessory_params = list(params)
 
-                if selected_categories:
-                    cat_placeholders = ", ".join(["%s"] * len(selected_categories))
-                    accessory_where_clause += f" AND pc.ProductCategoryID IN ({cat_placeholders})"
-                    accessory_params.extend([int(cat) for cat in selected_categories])
-                # --- END NEW CODE ---
+            if selected_categories:
+                cat_placeholders = ", ".join(["%s"] * len(selected_categories))
+                accessory_where_clause += f" AND pc.ProductCategoryID IN ({cat_placeholders})"
+                accessory_params.extend([int(cat) for cat in selected_categories])
 
             cursor.execute(f"""
                 SELECT

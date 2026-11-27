@@ -154,67 +154,49 @@
             </div>
 
             <nav class="py-4 px-3 space-y-1 text-sm font-medium overflow-y-auto flex-1">
-                {% if 'dashboard' in allowed_modules %}
-                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'dashboard' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">📊</span>
-                    <span>Dashboard</span>
+                <a href="{% url 'dashboard' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'dashboard' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">📊</span><span class="truncate">Dashboard</span></span>
+                    {% if 'dashboard' not in allowed_modules %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if 'revenue' in allowed_modules %}
-                <a href="{% url 'revenue' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'revenue' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">💰</span>
-                    <span>Revenue & Loss</span>
+                <a href="{% url 'revenue' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'revenue' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">💰</span><span class="truncate">Revenue & Loss</span></span>
+                    {% if 'revenue' not in allowed_modules %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if 'cost' in allowed_modules %}
-                <a href="{% url 'cost' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'cost' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">📦</span>
-                    <span>Products</span>
+                <a href="{% url 'cost' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'cost' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">📦</span><span class="truncate">Products</span></span>
+                    {% if 'cost' not in allowed_modules %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if 'customers' in allowed_modules %}
-                <a href="{% url 'customers' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'customers' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">👥</span>
-                    <span>Customers</span>
+                <a href="{% url 'customers' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'customers' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">👥</span><span class="truncate">Customers</span></span>
+                    {% if 'customers' not in allowed_modules %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if 'sales' in allowed_modules %}
-                <a href="{% url 'sales' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'sales' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">📈</span>
-                    <span>Sales</span>
+                <a href="{% url 'sales' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'sales' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">📈</span><span class="truncate">Sales</span></span>
+                    {% if 'sales' not in allowed_modules %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if 'custom_reports' in allowed_modules %}
-                <a href="{% url 'custom_reports' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'custom_reports' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">📝</span>
-                    <span>Custom Reports</span>
+                <a href="{% url 'custom_reports' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'custom_reports' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">📝</span><span class="truncate">Custom Reports</span></span>
+                    {% if 'custom_reports' not in allowed_modules %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if can_view_rbac or can_view_audit %}
                 <div class="pt-5 pb-2 px-4 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
                     Governance
                 </div>
-                {% endif %}
 
-                {% if can_view_rbac %}
-                <a href="{% url 'rbac_management' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'rbac_management' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">🛡️</span>
-                    <span>RBAC</span>
+                <a href="{% url 'rbac_management' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'rbac_management' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">🛡️</span><span class="truncate">RBAC</span></span>
+                    {% if not can_view_rbac %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
-                {% if can_view_audit %}
-                <a href="{% url 'audit_logs' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition {% if active_page == 'audit_logs' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
-                    <span class="text-lg">🧾</span>
-                    <span>Audit Logs</span>
+                <a href="{% url 'audit_logs' %}" class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl transition {% if active_page == 'audit_logs' %}accent-nav-active{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+                    <span class="flex items-center gap-3 min-w-0"><span class="text-lg">🧾</span><span class="truncate">Audit Logs</span></span>
+                    {% if not can_view_audit %}<span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300" title="Restricted for your current role">🔒 WARN</span>{% endif %}
                 </a>
-                {% endif %}
 
                 <div class="pt-5 pb-2 px-4 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
                     Preferences
@@ -250,7 +232,7 @@
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
-       <header class="h-16 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-8 flex items-center justify-between text-sm shrink-0 print:hidden">
+        <header class="h-16 bg-white dark:bg-sidebarbg border-b border-slate-200 dark:border-bordercol px-8 flex items-center justify-between text-sm shrink-0 print:hidden">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
                 <span class="text-slate-900 dark:text-white tracking-wider font-semibold">
                     ADVENTUREWORKS BI

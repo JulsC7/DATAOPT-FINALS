@@ -77,13 +77,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'AdventureWorks2019',
-        'HOST': 'localhost',
-        'PORT': '1433',
-        'USER': 'sa',
-        'PASSWORD': 'VeryStr0ngP@ssw0rd',
+        'HOST': r'MJDL\MSSQLSERVER2025', #CHANGE THIS INTO UR SERVER NAME SA SQL
+        'USER': '',
+        'PASSWORD': '',
         'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'extra_params': 'Encrypt=yes;TrustServerCertificate=yes;',
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'extra_params': 'Trusted_Connection=yes;',
         },
     }
 }

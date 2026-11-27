@@ -240,6 +240,15 @@ def get_role_modules(role_key: str) -> list:
     return default_modules
 
 
+def parse_roles(role_key: str) -> list:
+    roles = [
+        r.strip()
+        for r in str(role_key or '').split(',')
+        if r.strip() in Role_Permission
+    ]
+    return roles or ['Employee']
+
+
 def parse_departments(dept_key: str) -> list:
     departments = [
         department.strip()
@@ -260,71 +269,100 @@ def parse_departments(dept_key: str) -> list:
 
 
 def resolve_allowed_modules(role_key: str, dept_key: str) -> list:
-    policy = Role_Permission.get(role_key, Role_Permission['Employee'])
-    role_modules = get_role_modules(role_key)
+    selected_roles = parse_roles(role_key)
     selected_departments = parse_departments(dept_key)
 
-    if role_key == 'Administrator' or 'All' in selected_departments:
-        return role_modules
+    if 'Administrator' in selected_roles:
+        return list(Role_Permission['Administrator']['base_modules'])
 
-    if policy['scope'] == 'department':
-        combined_modules = list(role_modules)
-        for department in selected_departments:
-            dept_modules = Departments.get(department, Departments['Sales'])['modules']
-            for mod in dept_modules:
-                if mod in role_modules and mod not in combined_modules:
+    combined_modules = []
+    for r_key in selected_roles:
+        policy = Role_Permission.get(r_key, Role_Permission['Employee'])
+        role_modules = get_role_modules(r_key)
+
+        if 'All' in selected_departments or policy['scope'] != 'department':
+            for mod in role_modules:
+                if mod not in combined_modules:
                     combined_modules.append(mod)
-        return combined_modules
+        else:
+            for mod in role_modules:
+                if mod in ('dashboard', 'reports_library') and mod not in combined_modules:
+                    combined_modules.append(mod)
+            for department in selected_departments:
+                dept_modules = Departments.get(department, Departments['Sales'])['modules']
+                for mod in dept_modules:
+                    if mod in role_modules and mod not in combined_modules:
+                        combined_modules.append(mod)
 
-    return role_modules
+    return combined_modules
 
 
 def get_user_context(request, active_page=''):
-    role_key = request.session.get('active_role', 'Employee')
-    if role_key not in Role_Permission:
-        role_key = 'Employee'
+    raw_role = request.session.get('active_role', 'Employee')
+    selected_roles = parse_roles(raw_role)
+    role_key = ','.join(selected_roles)
 
     dept_key = request.session.get('active_department', 'Sales')
     selected_departments = parse_departments(dept_key)
 
-    policy = Role_Permission[role_key]
+    policies = [Role_Permission[r] for r in selected_roles]
+    primary_policy = policies[0]
     allowed_modules = resolve_allowed_modules(role_key, dept_key)
-    can_view_rbac = policy['can_view_rbac'] or ('rbac_management' in allowed_modules)
-    can_view_audit = policy['can_view_audit'] or ('audit_logs' in allowed_modules)
+
+    can_export = any(p['can_export'] for p in policies)
+    can_edit_rbac = any(p['can_edit_rbac'] for p in policies)
+    can_view_rbac = any(p['can_view_rbac'] for p in policies) or ('rbac_management' in allowed_modules)
+    can_view_audit = any(p['can_view_audit'] for p in policies) or ('audit_logs' in allowed_modules)
+    can_share_views = any(p.get('can_share_views', False) for p in policies)
+    aggregated_only = all(p['aggregated_only'] for p in policies)
+
+    if any(p.get('can_manage_views') == 'all' for p in policies):
+        can_manage_views = 'all'
+    elif any(p.get('can_manage_views') == 'own' for p in policies):
+        can_manage_views = 'own'
+    else:
+        can_manage_views = False
+
+    if any(p.get('can_manage_notes') == 'all' for p in policies):
+        can_manage_notes = 'all'
+    elif any(p.get('can_manage_notes') == 'own' for p in policies):
+        can_manage_notes = 'own'
+    else:
+        can_manage_notes = False
 
     department_labels = [
         Departments[department]['label']
         for department in selected_departments
         if department in Departments
     ]
-
     department_label = ', '.join(department_labels) if department_labels else 'Sales'
 
-    display_role = (
-        f"{department_label} {policy['title']}"
-        if policy['scope'] == 'department'
-        else policy['title']
-    )
+    role_titles = [
+        f"{department_label} {p['title']}" if p['scope'] == 'department' else p['title']
+        for p in policies
+    ]
+    display_role = ', '.join(role_titles)
 
     return {
         'username': request.session.get('username', 'aw_user'),
         'active_role': role_key,
+        'active_roles': selected_roles,
         'active_department': dept_key,
         'active_departments': selected_departments,
         'department_label': department_label,
         'role_title': display_role,
-        'tag': policy['tag'],
-        'initials': policy['initials'],
+        'tag': primary_policy['tag'],
+        'initials': primary_policy['initials'],
         'allowed_modules': allowed_modules,
-        'policy': policy,
-        'can_export': policy['can_export'],
+        'policy': primary_policy,
+        'can_export': can_export,
         'can_view_audit': can_view_audit,
         'can_view_rbac': can_view_rbac,
-        'can_edit_rbac': policy['can_edit_rbac'],
-        'can_manage_views': policy.get('can_manage_views', False),
-        'can_share_views': policy.get('can_share_views', False),
-        'can_manage_notes': policy.get('can_manage_notes', False),
-        'aggregated_only': policy['aggregated_only'],
+        'can_edit_rbac': can_edit_rbac,
+        'can_manage_views': can_manage_views,
+        'can_share_views': can_share_views,
+        'can_manage_notes': can_manage_notes,
+        'aggregated_only': aggregated_only,
         'active_page': active_page,
     }
 
@@ -362,15 +400,19 @@ def require_module_access(module_key: str):
             if not request.session.get('is_authenticated'):
                 return redirect('login')
 
-            role_key = request.session.get('active_role', 'Employee')
+            raw_role = request.session.get('active_role', 'Employee')
+            selected_roles = parse_roles(raw_role)
+            role_key = ','.join(selected_roles)
             dept_key = request.session.get('active_department', 'Sales')
-            policy = Role_Permission.get(role_key, Role_Permission['Employee'])
+
+            policies = [Role_Permission[r] for r in selected_roles]
             allowed = resolve_allowed_modules(role_key, dept_key)
-            can_view_rbac = policy['can_view_rbac'] or ('rbac_management' in allowed)
-            can_view_audit = policy['can_view_audit'] or ('audit_logs' in allowed)
+            can_edit_rbac = any(p['can_edit_rbac'] for p in policies)
+            can_view_rbac = any(p['can_view_rbac'] for p in policies) or ('rbac_management' in allowed)
+            can_view_audit = any(p['can_view_audit'] for p in policies) or ('audit_logs' in allowed)
 
             if module_key in ('rbac_audit', 'rbac_management', 'audit_logs'):
-                if module_key == 'rbac_management' and not can_view_rbac and not policy['can_edit_rbac']:
+                if module_key == 'rbac_management' and not can_view_rbac and not can_edit_rbac:
                     log_audit_event(
                         request,
                         role_key,
