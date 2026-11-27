@@ -59,3 +59,21 @@ class RoleModulePermission(models.Model):
 
     def __str__(self):
         return f"{self.role_name}: {self.allowed_modules}"
+
+from django.db import models
+
+
+class CustomReport(models.Model):
+    title = models.CharField(max_length=150)
+    created_by = models.CharField(max_length=100)
+    selected_widgets = models.TextField(default='kpi_summary,chart_country,chart_trend')
+    filters_json = models.TextField(default='{}')
+    analyst_notes = models.TextField(blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def widget_list(self):
+        return [w.strip() for w in self.selected_widgets.split(',') if w.strip()]
+  

@@ -15,6 +15,7 @@ urlpatterns = [
     path('customers/', views.customer_profile, name='customers'),
     path('revenue/', views.revenue_loss, name='revenue'),
     path('cost/', views.cost_report, name='cost'),
+    path('custom-reports/', views.custom_reports_view, name='custom_reports'),
 
     # Governance & Workspace pages
     path('rbac/', views.rbac_management, name='rbac_management'),

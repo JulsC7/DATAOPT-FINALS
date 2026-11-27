@@ -1,0 +1,842 @@
+{% extends 'reports/base.html' %}
+{% block title %}Custom Reports | AdventureWorks{% endblock %}
+{% block breadcrumb %}Custom Reports{% endblock %}
+
+{% block content %}
+<div id="customReportToast" style="z-index: 10000;" class="hidden fixed top-5 right-5 max-w-sm w-full rounded-2xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-4 flex items-start gap-3 transition-all">
+    <div class="flex-shrink-0 h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold text-sm">
+        ✓
+    </div>
+    <div class="flex-1">
+        <p id="customReportToastTitle" class="text-sm font-bold text-slate-950 dark:text-white">Saved</p>
+        <p id="customReportToastMessage" class="mt-0.5 text-xs text-slate-600 dark:text-slate-300"></p>
+    </div>
+    <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold">
+        ✕
+    </button>
+</div>
+
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 print:hidden">
+    <div>
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">
+            Custom Reports
+        </h1>
+        <p class="mt-1 text-base text-slate-600 dark:text-slate-400">
+            Combine department-authorized charts, KPIs, and tables into a unified report view.
+        </p>
+    </div>
+
+    <div class="flex gap-3">
+        {% if can_manage_views %}
+        <a href="{% url 'custom_reports' %}" class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition">
+            + New Report
+        </a>
+        {% endif %}
+        <button type="button" onclick="window.print()" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition">
+            Export PDF
+        </button>
+    </div>
+</div>
+
+{% if saved_reports %}
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 print:hidden">
+    <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+        Saved Report Views
+    </span>
+    <div class="flex flex-wrap gap-2">
+        {% for rep in saved_reports %}
+        <a href="?report_id={{ rep.id }}"
+           class="inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition {% if active_report and active_report.id == rep.id %}border-blue-600 bg-blue-600 text-white{% else %}border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-blue-500{% endif %}">
+            <span>{{ rep.title }}</span>
+            <span class="opacity-75 font-normal">({{ rep.created_by }})</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:hidden">
+    <form id="customReportComposerForm" method="POST" class="p-5 space-y-5">
+        {% csrf_token %}
+        <input type="hidden" name="action_type" value="save_report">
+        {% if active_report %}
+        <input type="hidden" name="report_id" value="{{ active_report.id }}">
+        {% endif %}
+
+        <div class="flex flex-col xl:flex-row xl:items-end gap-4">
+            {% if can_edit_active_view %}
+            <div class="flex-1 min-w-[200px]">
+                <label for="report_title" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Report Title
+                </label>
+                <input id="report_title"
+                       name="title"
+                       value="{{ preview_title|default:'' }}"
+                       placeholder="Enter custom report title"
+                       class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            {% endif %}
+
+            <div class="relative w-full xl:w-80">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Visuals
+                </label>
+
+                <button type="button" onclick="toggleDropdown('widgetsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span id="widgetsDropdownLabel" class="truncate">{{ selected_widgets|length }} selected</span>
+                    <span class="text-slate-400">▾</span>
+                </button>
+
+                <div id="widgetsDropdown" class="hidden absolute z-30 mt-2 w-full sm:w-96 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-80 overflow-y-auto">
+                    <div class="p-2 space-y-2">
+                        {% regroup available_widgets by section as widget_sections %}
+                        {% for group in widget_sections %}
+                        <div>
+                            <div class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                {{ group.grouper }}
+                            </div>
+                            <div class="space-y-0.5">
+                                {% for w in group.list %}
+                                <label class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                                    <input type="checkbox"
+                                           name="widgets"
+                                           value="{{ w.id }}"
+                                           {% if w.id in selected_widgets %}checked{% endif %}
+                                           onchange="updateWidgetsLabel()"
+                                           class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span>{{ w.label }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="px-2 py-2 text-sm text-slate-500">No visuals permitted for your role.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative w-full xl:w-52">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Year
+                </label>
+
+                <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span class="truncate">{{ selected_years_label }}</span>
+                    <span class="text-slate-400">▾</span>
+                </button>
+
+                <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                    <div class="p-2 space-y-1">
+                        {% for year in available_years %}
+                        <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <input type="checkbox"
+                                   name="years"
+                                   value="{{ year }}"
+                                   {% if year|stringformat:"s" in selected_years %}checked{% endif %}
+                                   class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span>{{ year }}</span>
+                        </label>
+                        {% empty %}
+                        <div class="px-2 py-2 text-sm text-slate-500">No years available</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Country / Countries -->
+            <div class="relative w-full xl:w-60">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Country
+                </label>
+
+                <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span class="truncate">{{ selected_countries_label }}</span>
+                    <span class="text-slate-400">▾</span>
+                </button>
+
+                <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                    <div class="p-2 space-y-1">
+                        {% for country in countries %}
+                        <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <input type="checkbox"
+                                   name="countries"
+                                   value="{{ country.code }}"
+                                   {% if country.code in selected_countries %}checked{% endif %}
+                                   class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span>{{ country.name }}</span>
+                        </label>
+                        {% empty %}
+                        <div class="px-2 py-2 text-sm text-slate-500">No countries available</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-2.5 shrink-0">
+                <button type="button" onclick="generatePreview()" class="rounded-xl bg-slate-800 dark:bg-slate-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-900 dark:hover:bg-slate-600 transition">
+                    Generate Report
+                </button>
+
+                {% if can_edit_active_view or can_edit_active_note %}
+                <button type="submit" onclick="queueSuccessToast('Report Saved', 'Your custom report view has been saved.')" class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    Save Report
+                </button>
+                {% endif %}
+
+                {% if can_delete_active %}
+                <button type="button" onclick="confirmDeleteReport('{{ active_report.title|escapejs }}')" class="rounded-xl border border-rose-300 dark:border-rose-800 px-4 py-2.5 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition">
+                    Delete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_edit_active_note %}
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+            <label for="analyst_notes" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Analyst Notes
+            </label>
+            <textarea id="analyst_notes"
+                      name="analyst_notes"
+                      rows="2"
+                      placeholder="Add notes for this report..."
+                      class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">{{ active_report.analyst_notes|default:'' }}</textarea>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+{% if can_delete_active %}
+<form id="deleteCustomReportForm" method="POST" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action_type" value="delete_report">
+    <input type="hidden" name="report_id" value="{{ active_report.id }}">
+</form>
+{% endif %}
+
+<!-- Saved Notes Callout -->
+{% if active_report and active_report.analyst_notes %}
+<div class="rounded-2xl border border-blue-200 dark:border-blue-800/70 bg-blue-50/70 dark:bg-blue-950/30 p-5">
+    <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+            Analyst Notes • {{ active_report.created_by }}
+        </span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+            Updated {{ active_report.updated_at|date:"M d, Y H:i" }}
+        </span>
+    </div>
+    <p class="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line">{{ active_report.analyst_notes }}</p>
+</div>
+{% endif %}
+
+{% if 'dash_kpis' in selected_widgets %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Revenue</p>
+        <h2 title="${{ kpi.total_revenue_display|default:'0.00' }}" class="mt-2 text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+            ${{ kpi.total_revenue_compact|default:"0" }}
+        </h2>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Orders</p>
+        <h2 title="{{ kpi.total_orders_display|default:'0' }}" class="mt-2 text-2xl font-bold text-blue-700 dark:text-blue-300">
+            {{ kpi.total_orders_compact|default:"0" }}
+        </h2>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Customers</p>
+        <h2 title="{{ kpi.active_customers_display|default:'0' }}" class="mt-2 text-2xl font-bold text-violet-700 dark:text-violet-300">
+            {{ kpi.active_customers_compact|default:"0" }}
+        </h2>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Countries</p>
+        <h2 title="{{ kpi.countries_display|default:'0' }}" class="mt-2 text-2xl font-bold text-amber-700 dark:text-amber-300">
+            {{ kpi.countries_compact|default:"0" }}
+        </h2>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Avg Order</p>
+        <h2 title="${{ kpi.avg_order_value_display|default:'0.00' }}" class="mt-2 text-2xl font-bold text-cyan-700 dark:text-cyan-300">
+            ${{ kpi.avg_order_value_compact|default:"0" }}
+        </h2>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Online</p>
+        <h2 title="{{ kpi.online_orders_display|default:'0' }}" class="mt-2 text-2xl font-bold text-rose-700 dark:text-rose-300">
+            {{ kpi.online_orders_compact|default:"0" }}
+        </h2>
+    </div>
+</div>
+{% endif %}
+
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    {% if 'dash_country_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Revenue by Country
+        </h3>
+        <div class="h-80"><canvas id="dashCountryChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'dash_year_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Revenue by Year
+        </h3>
+        <div class="h-80"><canvas id="dashYearChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_trend_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Monthly Sales Trend
+        </h3>
+        <div class="h-80"><canvas id="salesTrendChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_country_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Compare Country Performance
+        </h3>
+        <div class="h-80"><canvas id="salesCountryChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_year_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Compare Sales by Year
+        </h3>
+        <div class="h-80"><canvas id="salesYearChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_territory_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Sales by Territory
+        </h3>
+        <div class="h-80"><canvas id="salesTerritoryChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'cust_territory_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Active Customers by Territory
+        </h3>
+        <div class="h-80"><canvas id="custTerritoryChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'rev_loss_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Revenue and Discount Loss Chart
+        </h3>
+        <div class="h-80"><canvas id="revLossChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'cost_comp_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Product Cost Comparison
+        </h3>
+        <div class="h-80"><canvas id="costCompChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'cost_cat_perf_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Collective Category Performance
+        </h3>
+        <div class="h-80"><canvas id="costCatPerfChart"></canvas></div>
+    </div>
+    {% endif %}
+
+    {% if 'cost_cat_count_chart' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h3 class="text-center text-base font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-4">
+            Product Count by Category
+        </h3>
+        <div class="h-80"><canvas id="costCatCountChart"></canvas></div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- =================================================================== -->
+<!-- TABLES GRID (EXACT TITLES & COLUMNS FROM DEPARTMENT PAGES)          -->
+<!-- =================================================================== -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    {% if 'dash_country_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Country Revenue Breakdown</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Country</th><th class="py-3 px-6">Orders</th><th class="py-3 px-6">Revenue</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in revenue_by_country %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-medium">{{ row.CountryName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalRevenueDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="py-6 px-6 text-center text-slate-500">No country data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'dash_territories_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Top Territories</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Territory</th><th class="py-3 px-6">Country</th><th class="py-3 px-6">Orders</th><th class="py-3 px-6">Revenue</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in top_territories %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-medium">{{ row.TerritoryName|default:"Unknown" }}</td>
+                        <td class="py-3 px-6">{{ row.CountryName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalRevenueDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-6 px-6 text-center text-slate-500">No territory data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_country_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Country Performance</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Country</th><th class="py-3 px-6">Orders</th><th class="py-3 px-6">Sales</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in revenue_by_country %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-medium">{{ row.CountryName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalRevenueDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="py-6 px-6 text-center text-slate-500">No country performance data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_cust_dir_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Sales Customer Directory</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Customer ID</th><th class="py-3 px-6">Territory</th><th class="py-3 px-6">Orders</th><th class="py-3 px-6">Lifetime Spend</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in sales_customer_directory %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-mono">{{ row.CustomerID }}</td>
+                        <td class="py-3 px-6">{{ row.TerritoryName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.TotalOrdersDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.LifetimeSpendDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-6 px-6 text-center text-slate-500">No sales customer directory data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'sales_monthly_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Monthly Sales Breakdown</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Year</th><th class="py-3 px-6">Month</th><th class="py-3 px-6">Orders</th><th class="py-3 px-6">Total Sales</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in sales_trends %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6">{{ row.SalesYear }}</td>
+                        <td class="py-3 px-6">{{ row.SalesMonth }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.OrderCountDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.TotalSalesDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-6 px-6 text-center text-slate-500">No monthly sales data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'cust_territory_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Active Customers by Territory</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Territory</th><th class="py-3 px-6">Country</th><th class="py-3 px-6">Active Customers</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in active_customers %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-medium">{{ row.TerritoryName }}</td>
+                        <td class="py-3 px-6">{{ row.CountryName }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">{{ row.ActiveCustomerCountDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="py-6 px-6 text-center text-slate-500">No customer summary data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'cust_dir_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Customer Directory</h3>
+        </div>
+        {% if can_view_customer_details %}
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Customer ID</th><th class="py-3 px-6">Name</th><th class="py-3 px-6">Phone</th><th class="py-3 px-6">Territory</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in customer_directory %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-mono">{{ row.CustomerID }}</td>
+                        <td class="py-3 px-6">{{ row.DisplayName }}</td>
+                        <td class="py-3 px-6">{{ row.DisplayPhone }}</td>
+                        <td class="py-3 px-6">{{ row.TerritoryName }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-6 px-6 text-center text-slate-500">No customer directory rows available.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-6 text-sm text-slate-600 dark:text-slate-300">
+            Your current role can view customer summaries, but cannot view customer directory details.
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if 'rev_loss_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Revenue & Loss Breakdown</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Product</th><th class="py-3 px-6">Category</th><th class="py-3 px-6">Net Revenue</th><th class="py-3 px-6">Discount Loss</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in revenue_data %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-medium">{{ row.ProductName }}</td>
+                        <td class="py-3 px-6">{{ row.CategoryName }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.NetRevenueDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-rose-700 dark:text-rose-300">${{ row.DiscountLossDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-6 px-6 text-center text-slate-500">No revenue data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if 'cost_breakdown_table' in selected_widgets %}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Product Cost Breakdown</h3>
+        </div>
+        <div class="overflow-x-auto max-h-80">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 dark:bg-slate-800 uppercase text-slate-500 dark:text-slate-300 sticky top-0 text-xs">
+                    <tr><th class="py-3 px-6">Product</th><th class="py-3 px-6">Product No.</th><th class="py-3 px-6">Category</th><th class="py-3 px-6">Standard Cost</th><th class="py-3 px-6">List Price</th><th class="py-3 px-6">Unit Margin</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in cost_data %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <td class="py-3 px-6 font-medium">{{ row.ProductName }}</td>
+                        <td class="py-3 px-6 font-mono">{{ row.ProductNumber }}</td>
+                        <td class="py-3 px-6">{{ row.CategoryName }}</td>
+                        <td class="py-3 px-6 font-mono text-rose-700 dark:text-rose-300">${{ row.StandardCostDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-blue-700 dark:text-blue-300">${{ row.ListPriceDisplay }}</td>
+                        <td class="py-3 px-6 font-mono text-emerald-700 dark:text-emerald-300">${{ row.UnitMarginDisplay }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="py-6 px-6 text-center text-slate-500">No product data found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteReportModal" style="z-index: 9999;" class="!mt-0 hidden fixed inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 h-10 w-10 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-300 flex items-center justify-center font-bold text-lg">!</div>
+            <div>
+                <h3 class="text-base font-bold text-slate-950 dark:text-white">Delete Custom Report?</h3>
+                <p id="deleteReportModalMsg" class="mt-1 text-sm text-slate-600 dark:text-slate-300"></p>
+            </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-3">
+            <button type="button" onclick="closeDeleteModal()" class="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancel</button>
+            <button type="button" onclick="submitDeleteReport()" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition">Yes, Delete Report</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const pageIsDark = document.documentElement.classList.contains('dark');
+    const axisColor = pageIsDark ? '#cbd5e1' : '#475569';
+    const gridColor = pageIsDark ? 'rgba(148, 163, 184, 0.18)' : '#e2e8f0';
+    const palette = pageIsDark
+        ? ['#60a5fa', '#34d399', '#fbbf24', '#fb7185', '#a78bfa', '#22d3ee', '#a3e635', '#fdba74']
+        : ['#2563eb', '#059669', '#d97706', '#e11d48', '#7c3aed', '#0891b2', '#65a30d', '#ea580c'];
+
+    function shortNumber(value) {
+        const abs = Math.abs(Number(value));
+        if (abs >= 1000000000) return (Number(value) / 1000000000).toFixed(1) + 'B';
+        if (abs >= 1000000) return (Number(value) / 1000000).toFixed(1) + 'M';
+        if (abs >= 1000) return (Number(value) / 1000).toFixed(1) + 'K';
+        return Number(value).toLocaleString();
+    }
+
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+            if (menu.id !== dropdownId) menu.classList.add('hidden');
+        });
+        dropdown.classList.toggle('hidden');
+    }
+
+    function updateWidgetsLabel() {
+        const checked = document.querySelectorAll('#widgetsDropdown input[type="checkbox"]:checked').length;
+        document.getElementById('widgetsDropdownLabel').textContent = checked + ' selected';
+    }
+
+    function generatePreview() {
+        const form = document.getElementById('customReportComposerForm');
+        const params = new URLSearchParams();
+        params.set('preview', '1');
+        const titleInput = document.getElementById('report_title');
+        if (titleInput && titleInput.value.trim()) params.set('title', titleInput.value.trim());
+        {% if active_report %}
+        params.set('report_id', '{{ active_report.id }}');
+        {% endif %}
+        form.querySelectorAll('input[name="widgets"]:checked').forEach(el => params.append('widgets', el.value));
+        form.querySelectorAll('input[name="years"]:checked').forEach(el => params.append('years', el.value));
+        form.querySelectorAll('input[name="countries"]:checked').forEach(el => params.append('countries', el.value));
+        window.location.href = '?' + params.toString();
+    }
+
+    document.addEventListener('click', function(event) {
+        const inside = event.target.closest('[id$="Dropdown"]');
+        const btn = event.target.closest('button[onclick^="toggleDropdown"]');
+        if (!inside && !btn) {
+            document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) { menu.classList.add('hidden'); });
+        }
+    });
+
+    function confirmDeleteReport(title) {
+        document.getElementById('deleteReportModalMsg').textContent = 'Are you sure you want to permanently delete "' + title + '"?';
+        document.getElementById('deleteReportModal').classList.remove('hidden');
+    }
+    function closeDeleteModal() { document.getElementById('deleteReportModal').classList.add('hidden'); }
+    function submitDeleteReport() {
+        queueSuccessToast('Report Deleted', 'The custom report has been permanently removed.');
+        document.getElementById('deleteCustomReportForm').submit();
+    }
+    function queueSuccessToast(title, message) {
+        sessionStorage.setItem('custom_report_toast', JSON.stringify({ title: title, message: message }));
+    }
+    function hideToast() { document.getElementById('customReportToast').classList.add('hidden'); }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ['deleteReportModal', 'customReportToast'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) document.body.appendChild(el);
+        });
+
+        const queued = sessionStorage.getItem('custom_report_toast');
+        if (queued) {
+            sessionStorage.removeItem('custom_report_toast');
+            try {
+                const data = JSON.parse(queued);
+                document.getElementById('customReportToastTitle').textContent = data.title;
+                document.getElementById('customReportToastMessage').textContent = data.message;
+                document.getElementById('customReportToast').classList.remove('hidden');
+                setTimeout(hideToast, 4500);
+            } catch (e) {}
+        }
+
+        const currencyScale = {
+            x: { ticks: { color: axisColor }, grid: { color: gridColor } },
+            y: { beginAtZero: true, ticks: { color: axisColor, callback: v => '$' + shortNumber(v) }, grid: { color: gridColor } }
+        };
+        const countScale = {
+            x: { ticks: { color: axisColor }, grid: { color: gridColor } },
+            y: { beginAtZero: true, ticks: { color: axisColor, callback: v => shortNumber(v) }, grid: { color: gridColor } }
+        };
+
+        if (document.getElementById('dashCountryChart')) {
+            new Chart(document.getElementById('dashCountryChart'), {
+                type: 'bar',
+                data: { labels: {{ dash_country_labels|default:"[]"|safe }}, datasets: [{ label: 'Revenue ($)', data: {{ dash_country_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#60a5fa' : '#2563eb', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('dashYearChart')) {
+            new Chart(document.getElementById('dashYearChart'), {
+                type: 'line',
+                data: { labels: {{ dash_year_labels|default:"[]"|safe }}, datasets: [{ label: 'Revenue ($)', data: {{ dash_year_values|default:"[]"|safe }}, borderColor: pageIsDark ? '#34d399' : '#059669', backgroundColor: 'rgba(5, 150, 105, 0.14)', fill: true, tension: 0.25, pointRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('salesTrendChart')) {
+            new Chart(document.getElementById('salesTrendChart'), {
+                type: 'line',
+                data: { labels: {{ sales_trend_labels|default:"[]"|safe }}, datasets: [{ label: 'Total Sales ($)', data: {{ sales_trend_values|default:"[]"|safe }}, borderColor: pageIsDark ? '#60a5fa' : '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.14)', fill: true, tension: 0.2, pointRadius: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('salesCountryChart')) {
+            new Chart(document.getElementById('salesCountryChart'), {
+                type: 'bar',
+                data: { labels: {{ dash_country_labels|default:"[]"|safe }}, datasets: [{ label: 'Country Sales ($)', data: {{ dash_country_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#60a5fa' : '#2563eb', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('salesYearChart')) {
+            new Chart(document.getElementById('salesYearChart'), {
+                type: 'line',
+                data: { labels: {{ dash_year_labels|default:"[]"|safe }}, datasets: [{ label: 'Year Sales ($)', data: {{ dash_year_values|default:"[]"|safe }}, borderColor: pageIsDark ? '#34d399' : '#059669', backgroundColor: 'rgba(5, 150, 105, 0.14)', fill: true, tension: 0.25, pointRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('salesTerritoryChart')) {
+            new Chart(document.getElementById('salesTerritoryChart'), {
+                type: 'bar',
+                data: { labels: {{ sales_territory_labels|default:"[]"|safe }}, datasets: [{ label: 'Total Sales ($)', data: {{ sales_territory_values|default:"[]"|safe }}, backgroundColor: palette, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('custTerritoryChart')) {
+            new Chart(document.getElementById('custTerritoryChart'), {
+                type: 'bar',
+                data: { labels: {{ cust_territory_labels|default:"[]"|safe }}, datasets: [{ label: 'Active Customers', data: {{ cust_territory_values|default:"[]"|safe }}, backgroundColor: palette, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: countScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('revLossChart')) {
+            new Chart(document.getElementById('revLossChart'), {
+                type: 'bar',
+                data: {
+                    labels: {{ rev_labels|default:"[]"|safe }},
+                    datasets: [
+                        { label: 'Net Revenue ($)', data: {{ rev_net_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#34d399' : '#059669', borderRadius: 6 },
+                        { label: 'Discount Loss ($)', data: {{ rev_loss_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#fb7185' : '#e11d48', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('costCompChart')) {
+            new Chart(document.getElementById('costCompChart'), {
+                type: 'bar',
+                data: {
+                    labels: {{ cost_labels|default:"[]"|safe }},
+                    datasets: [
+                        { label: 'Standard Cost ($)', data: {{ cost_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#fb7185' : '#e11d48', borderRadius: 6 },
+                        { label: 'List Price ($)', data: {{ price_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#60a5fa' : '#2563eb', borderRadius: 6 },
+                        { label: 'Unit Margin ($)', data: {{ margin_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#34d399' : '#059669', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('costCatPerfChart')) {
+            new Chart(document.getElementById('costCatPerfChart'), {
+                type: 'bar',
+                data: { labels: {{ cat_labels|default:"[]"|safe }}, datasets: [{ label: 'Total Revenue ($)', data: {{ cat_rev_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#60a5fa' : '#2563eb', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: currencyScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+
+        if (document.getElementById('costCatCountChart')) {
+            new Chart(document.getElementById('costCatCountChart'), {
+                type: 'bar',
+                data: { labels: {{ cat_labels|default:"[]"|safe }}, datasets: [{ label: 'Products', data: {{ cat_count_values|default:"[]"|safe }}, backgroundColor: pageIsDark ? '#34d399' : '#059669', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: countScale, plugins: { legend: { labels: { color: axisColor } } } }
+            });
+        }
+    });
+</script>
+{% endblock %}

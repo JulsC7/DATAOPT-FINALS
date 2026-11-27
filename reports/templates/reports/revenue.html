@@ -11,32 +11,35 @@
         </p>
     </div>
 
-    <div class="flex gap-3">
-        <a href="{% url 'export_report' 'revenue' 'csv' %}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+    <div class="flex gap-3 print:hidden">
+        <button type="button" onclick="openDeptReportModal()" class="rounded-xl bg-slate-800 dark:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-900 dark:hover:bg-slate-600 shadow-sm transition">
+            Create Report
+        </button>
+        <a href="{% url 'export_report' 'revenue' 'csv' %}" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
             Export CSV
         </a>
-        <a href="{% url 'export_report' 'revenue' 'pdf' %}" target="_blank" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        <a href="{% url 'export_report' 'revenue' 'pdf' %}" target="_blank" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm">
             Export PDF
         </a>
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-    <form method="GET" class="p-4 flex flex-col xl:flex-row xl:items-end gap-4">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:hidden">
+    <form method="GET" class="p-5 flex flex-col xl:flex-row xl:items-end gap-4">
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Year / Years
+                Year
             </label>
 
-            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+            <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
                 <span>{% if selected_years %}{{ selected_years|length }} selected{% else %}All Years{% endif %}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="yearsDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for year in available_years %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
                         <input type="checkbox" name="years" value="{{ year }}" {% if year|stringformat:"s" in selected_years %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ year }}</span>
                     </label>
@@ -49,18 +52,18 @@
 
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Country / Countries
+                Country
             </label>
 
-            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+            <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
                 <span>{% if selected_countries %}{{ selected_countries|length }} selected{% else %}All Countries{% endif %}</span>
                 <span class="text-slate-400">▾</span>
             </button>
 
-            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+            <div id="countriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
                 <div class="p-2 space-y-1">
                     {% for country in countries %}
-                    <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
                         <input type="checkbox" name="countries" value="{{ country.code }}" {% if country.code in selected_countries %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ country.name }}</span>
                     </label>
@@ -71,78 +74,102 @@
             </div>
         </div>
 
-<div class="relative w-full xl:w-56">
-    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-        Category / Categories
-    </label>
-
-    <button type="button" onclick="toggleDropdown('categoriesDropdown')" class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-        <span>
-            {% if selected_categories %}
-                {{ selected_categories|length }} selected
-            {% else %}
-                All Categories
-            {% endif %}
-        </span>
-        <span class="text-slate-400">▾</span>
-    </button>
-
-    <div id="categoriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
-        <div class="p-2 space-y-1">
-            {% for category in categories %}
-            <label class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <input
-                    type="checkbox"
-                    name="categories"
-                    value="{{ category.ProductCategoryID }}"
-                    {% if category.ProductCategoryID|stringformat:"s" in selected_categories %}checked{% endif %}
-                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                <span>{{ category.Name }}</span>
+        <div class="relative w-full xl:w-56">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Category
             </label>
-            {% empty %}
-            <div class="px-2 py-2 text-sm text-slate-500">No categories available</div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
 
-        <div class="w-full xl:w-32">
-            <label for="top_n" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <button type="button" onclick="toggleDropdown('categoriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span>
+                    {% if selected_categories %}
+                        {{ selected_categories|length }} selected
+                    {% else %}
+                        All Categories
+                    {% endif %}
+                </span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="categoriesDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    {% for category in categories %}
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="categories"
+                            value="{{ category.ProductCategoryID }}"
+                            {% if category.ProductCategoryID|stringformat:"s" in selected_categories %}checked{% endif %}
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>{{ category.Name }}</span>
+                    </label>
+                    {% empty %}
+                    <div class="px-2 py-2 text-sm text-slate-500">No categories available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative w-full xl:w-40">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Top N
             </label>
-            <select id="top_n" name="top_n" class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-                <option value="10" {% if top_n == '10' %}selected{% endif %}>10</option>
-                <option value="15" {% if top_n == '15' %}selected{% endif %}>15</option>
-                <option value="25" {% if top_n == '25' %}selected{% endif %}>25</option>
-                <option value="50" {% if top_n == '50' %}selected{% endif %}>50</option>
-            </select>
+
+            <button type="button" onclick="toggleDropdown('topNDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span id="topNLabel" class="truncate">Top {{ top_n|default:"10" }}</span>
+                <span class="text-slate-400">▾</span>
+            </button>
+
+            <div id="topNDropdown" class="hidden absolute z-30 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="radio" name="top_n" value="10" {% if top_n == '10' or not top_n %}checked{% endif %} onchange="document.getElementById('topNLabel').innerText='Top 10'; toggleDropdown('topNDropdown');" class="border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>10</span>
+                    </label>
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="radio" name="top_n" value="15" {% if top_n == '15' %}checked{% endif %} onchange="document.getElementById('topNLabel').innerText='Top 15'; toggleDropdown('topNDropdown');" class="border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>15</span>
+                    </label>
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="radio" name="top_n" value="25" {% if top_n == '25' %}checked{% endif %} onchange="document.getElementById('topNLabel').innerText='Top 25'; toggleDropdown('topNDropdown');" class="border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>25</span>
+                    </label>
+                    <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="radio" name="top_n" value="50" {% if top_n == '50' %}checked{% endif %} onchange="document.getElementById('topNLabel').innerText='Top 50'; toggleDropdown('topNDropdown');" class="border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>50</span>
+                    </label>
+                </div>
+            </div>
         </div>
 
         <div class="flex gap-3">
-            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            <button type="submit" class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                 Apply
             </button>
-            <a href="{% url 'revenue' %}" class="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <a href="{% url 'revenue' %}" class="rounded-xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                 Clear
             </a>
         </div>
     </form>
 </div>
 
-<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+{% include 'reports/partials/dept_report_modal.html' %}
+
+<div data-report-widget="Revenue and Discount Loss Chart" class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Revenue and Discount Loss Chart
         </h3>
 
-        <div class="flex items-center gap-2">
-            <label for="revenueChartType" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Chart Type</label>
-            <select id="revenueChartType" onchange="changeRevenueChartType()" class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-                <option value="bar">Bar</option>
-                <option value="line">Line</option>
-                <option value="doughnut">Doughnut</option>
-                <option value="polarArea">Polar Area</option>
-            </select>
+        <div class="flex justify-end mb-4 print:hidden">
+            <div class="relative w-44">
+                <select id="revenueChartType" onchange="changeRevenueChartType()" class="w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-4 pr-9 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition cursor-pointer">
+                    <option value="bar">Bar</option>
+                    <option value="line">Line</option>
+                    <option value="doughnut">Doughnut</option>
+                    <option value="polarArea">Polar Area</option>
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">▾</span>
+            </div>
         </div>
     </div>
 
@@ -151,7 +178,7 @@
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+<div data-report-widget="Revenue & Loss Breakdown (Table)" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Revenue & Loss Breakdown

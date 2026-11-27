@@ -5,7 +5,7 @@ from django.db import connections
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
-from .models import AuditLog, RoleModulePermission, UserAccount
+from .models import AuditLog, RoleModulePermission, UserAccount, CustomReport
 from .rbac import (
     ALL_MANAGEABLE_MODULES,
     Departments,
@@ -721,6 +721,499 @@ def dashboard_overview(request):
 
     return render(request, 'reports/dashboard.html', ctx)
 
+# -------------------------------------------------------------------
+# Custom Editable Reports (Multi-Visual Composer)
+# -------------------------------------------------------------------
+AVAILABLE_WIDGETS = [
+    # Dashboard
+    {'id': 'dash_kpis', 'label': 'Executive KPI Cards', 'module': 'dashboard', 'section': 'Dashboard'},
+    {'id': 'dash_country_chart', 'label': 'Revenue by Country (Chart)', 'module': 'dashboard', 'section': 'Dashboard'},
+    {'id': 'dash_year_chart', 'label': 'Revenue by Year (Chart)', 'module': 'dashboard', 'section': 'Dashboard'},
+    {'id': 'dash_country_table', 'label': 'Country Revenue Breakdown (Table)', 'module': 'dashboard', 'section': 'Dashboard'},
+    {'id': 'dash_territories_table', 'label': 'Top Territories (Table)', 'module': 'dashboard', 'section': 'Dashboard'},
+
+    # Sales Performance
+    {'id': 'sales_trend_chart', 'label': 'Monthly Sales Trend (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
+    {'id': 'sales_country_chart', 'label': 'Compare Country Performance (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
+    {'id': 'sales_year_chart', 'label': 'Compare Sales by Year (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
+    {'id': 'sales_territory_chart', 'label': 'Sales by Territory (Chart)', 'module': 'sales', 'section': 'Sales Performance'},
+    {'id': 'sales_country_table', 'label': 'Country Performance (Table)', 'module': 'sales', 'section': 'Sales Performance'},
+    {'id': 'sales_cust_dir_table', 'label': 'Sales Customer Directory (Table)', 'module': 'sales', 'section': 'Sales Performance'},
+    {'id': 'sales_monthly_table', 'label': 'Monthly Sales Breakdown (Table)', 'module': 'sales', 'section': 'Sales Performance'},
+
+    # Customers
+    {'id': 'cust_territory_chart', 'label': 'Active Customers by Territory (Chart)', 'module': 'customers', 'section': 'Customers'},
+    {'id': 'cust_territory_table', 'label': 'Active Customers by Territory (Table)', 'module': 'customers', 'section': 'Customers'},
+    {'id': 'cust_dir_table', 'label': 'Customer Directory (Table)', 'module': 'customers', 'section': 'Customers'},
+
+    # Revenue & Loss
+    {'id': 'rev_loss_chart', 'label': 'Revenue and Discount Loss Chart', 'module': 'revenue', 'section': 'Revenue & Loss'},
+    {'id': 'rev_loss_table', 'label': 'Revenue & Loss Breakdown (Table)', 'module': 'revenue', 'section': 'Revenue & Loss'},
+
+    # Products (Cost)
+    {'id': 'cost_comp_chart', 'label': 'Product Cost Comparison (Chart)', 'module': 'cost', 'section': 'Products'},
+    {'id': 'cost_cat_perf_chart', 'label': 'Collective Category Performance (Chart)', 'module': 'cost', 'section': 'Products'},
+    {'id': 'cost_cat_count_chart', 'label': 'Product Count by Category (Chart)', 'module': 'cost', 'section': 'Products'},
+    {'id': 'cost_breakdown_table', 'label': 'Product Cost Breakdown (Table)', 'module': 'cost', 'section': 'Products'},
+]
+
+
+@require_module_access('custom_reports')
+def custom_reports_view(request):
+    ctx = get_user_context(request, active_page='custom_reports')
+    username = request.session.get('username', 'admin')
+    allowed_modules = ctx.get('allowed_modules', [])
+
+    # RBAC filter: only show visuals from modules permitted for this user's role & department
+    permitted_widgets = [
+        w for w in AVAILABLE_WIDGETS
+        if w['module'] in allowed_modules
+    ]
+    all_widget_ids = [w['id'] for w in permitted_widgets]
+
+    can_manage_views = ctx.get('can_manage_views', False)
+    can_manage_notes = ctx.get('can_manage_notes', False)
+    can_view_customer_details = not ctx.get('aggregated_only', True)
+
+    if request.method == 'POST':
+        action_type = request.POST.get('action_type', '').strip()
+
+        if action_type == 'save_report':
+            report_id = request.POST.get('report_id', '').strip()
+            existing = CustomReport.objects.filter(id=report_id).first() if report_id.isdigit() else None
+
+            can_edit_this_view = (
+                can_manage_views == 'all'
+                or (can_manage_views == 'own' and (existing is None or existing.created_by == username))
+            )
+            can_edit_this_note = (
+                can_manage_notes == 'all'
+                or (can_manage_notes == 'own' and (existing is None or existing.created_by == username))
+            )
+
+            if not can_edit_this_view and not can_edit_this_note:
+                return HttpResponse('Editing custom reports is denied for this role.', status=403)
+
+            chosen_widgets = [w for w in request.POST.getlist('widgets') if w in all_widget_ids] or all_widget_ids[:3]
+            years_list = [y for y in request.POST.getlist('years') if y.isdigit()]
+            countries_list = [c.strip() for c in request.POST.getlist('countries') if c.strip()]
+            filters_payload = json.dumps({
+                'years': years_list,
+                'countries': countries_list,
+            })
+
+            if existing:
+                if can_edit_this_view:
+                    existing.title = request.POST.get('title', '').strip() or existing.title
+                    existing.selected_widgets = ','.join(chosen_widgets)
+                    existing.filters_json = filters_payload
+                if can_edit_this_note:
+                    existing.analyst_notes = request.POST.get('analyst_notes', '').strip()
+
+                existing.save()
+                log_audit_event(
+                    request, ctx['active_role'], ctx['active_department'],
+                    'POST /custom-reports/', 'ALLOWED (200)',
+                    f"Updated custom report '{existing.title}'"
+                )
+                return redirect(f"/custom-reports/?report_id={existing.id}")
+
+            if not can_edit_this_view:
+                return HttpResponse('Creating custom reports is denied for this role.', status=403)
+
+            title = request.POST.get('title', '').strip() or 'Untitled Custom Report'
+            report = CustomReport.objects.create(
+                title=title,
+                created_by=username,
+                selected_widgets=','.join(chosen_widgets),
+                analyst_notes=request.POST.get('analyst_notes', '').strip() if can_edit_this_note else '',
+                filters_json=filters_payload,
+            )
+            log_audit_event(
+                request, ctx['active_role'], ctx['active_department'],
+                'POST /custom-reports/', 'ALLOWED (200)',
+                f"Created custom report '{title}'"
+            )
+            return redirect(f"/custom-reports/?report_id={report.id}")
+
+        elif action_type == 'delete_report':
+            report_id = request.POST.get('report_id', '').strip()
+            report = CustomReport.objects.filter(id=report_id).first()
+            can_delete_this = report and (
+                can_manage_views == 'all'
+                or (can_manage_views == 'own' and report.created_by == username)
+            )
+            if not can_delete_this:
+                return HttpResponse('Deleting this custom report is denied.', status=403)
+
+            deleted_title = report.title
+            report.delete()
+            log_audit_event(
+                request, ctx['active_role'], ctx['active_department'],
+                'POST /custom-reports/', 'ALLOWED (200)',
+                f"Deleted custom report '{deleted_title}'"
+            )
+            return redirect('custom_reports')
+
+    saved_reports = list(CustomReport.objects.all())
+    active_report_id = request.GET.get('report_id', '').strip()
+    active_report = CustomReport.objects.filter(id=active_report_id).first() if active_report_id.isdigit() else None
+    is_preview = request.GET.get('preview') == '1'
+
+    if active_report and not is_preview:
+        selected_widgets = [w for w in active_report.widget_list() if w in all_widget_ids] or all_widget_ids[:2]
+        saved_filters = json.loads(active_report.filters_json or '{}')
+        selected_years = saved_filters.get('years', [])
+        selected_countries = saved_filters.get('countries', [])
+        preview_title = active_report.title
+    else:
+        selected_widgets = [w for w in request.GET.getlist('widgets') if w in all_widget_ids] or all_widget_ids[:3]
+        selected_years, selected_countries = get_selected_filters(request)
+        preview_title = request.GET.get('title', '').strip() or (active_report.title if active_report else '')
+
+    can_edit_active_view = (
+        can_manage_views == 'all'
+        or (can_manage_views == 'own' and (active_report is None or active_report.created_by == username))
+    )
+    can_edit_active_note = (
+        can_manage_notes == 'all'
+        or (can_manage_notes == 'own' and (active_report is None or active_report.created_by == username))
+    )
+    can_delete_active = active_report is not None and (
+        can_manage_views == 'all'
+        or (can_manage_views == 'own' and active_report.created_by == username)
+    )
+
+    where_clause, params = build_sales_filter_clause(selected_years, selected_countries)
+
+    available_years = []
+    countries = []
+
+    # Dashboard data
+    kpi = {}
+    revenue_by_country = []
+    revenue_by_year = []
+    top_territories = []
+
+    # Sales Performance data
+    sales_trends = []
+    country_performance = []
+    territory_sales = []
+    sales_customer_directory = []
+
+    # Customers data
+    active_customers = []
+    customer_directory = []
+
+    # Revenue & Loss data
+    revenue_data = []
+
+    # Products (Cost) data
+    cost_data = []
+    accessory_data = []
+
+    try:
+        with connections[DB_ALIAS].cursor() as cursor:
+            available_years, countries = load_years_and_countries(cursor)
+
+            # 1. Dashboard KPIs
+            if 'dash_kpis' in selected_widgets:
+                cursor.execute(f"""
+                    SELECT
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS total_revenue,
+                        COUNT(soh.SalesOrderID) AS total_orders,
+                        COUNT(DISTINCT soh.CustomerID) AS active_customers,
+                        COUNT(DISTINCT st.CountryRegionCode) AS countries,
+                        CAST(ISNULL(AVG(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS avg_order_value,
+                        SUM(CASE WHEN soh.OnlineOrderFlag = 1 THEN 1 ELSE 0 END) AS online_orders
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                """, params)
+                row = dictfetchall(cursor)[0]
+                kpi = {
+                    'total_revenue_display': money(row['total_revenue']),
+                    'total_orders_display': number(row['total_orders']),
+                    'active_customers_display': number(row['active_customers']),
+                    'countries_display': number(row['countries']),
+                    'avg_order_value_display': money(row['avg_order_value']),
+                    'online_orders_display': number(row['online_orders']),
+                    'total_revenue_compact': compact_number(row['total_revenue']),
+                    'total_orders_compact': compact_number(row['total_orders']),
+                    'active_customers_compact': compact_number(row['active_customers']),
+                    'countries_compact': compact_number(row['countries']),
+                    'avg_order_value_compact': compact_number(row['avg_order_value']),
+                    'online_orders_compact': compact_number(row['online_orders']),
+                }
+
+            # 2. Dashboard / Sales Country Revenue
+            if any(w in selected_widgets for w in ('dash_country_chart', 'dash_country_table', 'sales_country_chart', 'sales_country_table')):
+                cursor.execute(f"""
+                    SELECT
+                        st.CountryRegionCode,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
+                        COUNT(soh.SalesOrderID) AS TotalOrders
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY st.CountryRegionCode
+                    ORDER BY TotalRevenue DESC
+                """, params)
+                for r in dictfetchall(cursor):
+                    r['CountryName'] = get_country_name(r.get('CountryRegionCode'))
+                    r['TotalRevenueDisplay'] = money(r.get('TotalRevenue'))
+                    r['TotalOrdersDisplay'] = number(r.get('TotalOrders'))
+                    revenue_by_country.append(r)
+
+            # 3. Dashboard / Sales Year Comparison
+            if any(w in selected_widgets for w in ('dash_year_chart', 'sales_year_chart')):
+                cursor.execute(f"""
+                    SELECT
+                        YEAR(soh.OrderDate) AS SalesYear,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
+                        COUNT(soh.SalesOrderID) AS TotalOrders
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY YEAR(soh.OrderDate)
+                    ORDER BY SalesYear
+                """, params)
+                revenue_by_year = dictfetchall(cursor)
+
+            # 4. Top Territories (Dashboard)
+            if 'dash_territories_table' in selected_widgets:
+                cursor.execute(f"""
+                    SELECT TOP 5
+                        st.Name AS TerritoryName,
+                        st.CountryRegionCode,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
+                        COUNT(soh.SalesOrderID) AS TotalOrders
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY st.Name, st.CountryRegionCode
+                    ORDER BY TotalRevenue DESC
+                """, params)
+                for r in dictfetchall(cursor):
+                    r['CountryName'] = get_country_name(r.get('CountryRegionCode'))
+                    r['TotalRevenueDisplay'] = money(r.get('TotalRevenue'))
+                    r['TotalOrdersDisplay'] = number(r.get('TotalOrders'))
+                    top_territories.append(r)
+
+            # 5. Monthly Sales Trend & Breakdown (Sales Performance)
+            if any(w in selected_widgets for w in ('sales_trend_chart', 'sales_monthly_table')):
+                cursor.execute(f"""
+                    SELECT
+                        YEAR(soh.OrderDate) AS SalesYear,
+                        MONTH(soh.OrderDate) AS SalesMonth,
+                        COUNT(soh.SalesOrderID) AS OrderCount,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalSales
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY YEAR(soh.OrderDate), MONTH(soh.OrderDate)
+                    ORDER BY SalesYear, SalesMonth
+                """, params)
+                for r in dictfetchall(cursor):
+                    r['OrderCountDisplay'] = number(r['OrderCount'])
+                    r['TotalSalesDisplay'] = money(r['TotalSales'])
+                    sales_trends.append(r)
+
+            # 6. Sales by Territory Chart (Sales Performance)
+            if 'sales_territory_chart' in selected_widgets:
+                cursor.execute(f"""
+                    SELECT
+                        ISNULL(st.Name, 'Unknown') AS TerritoryName,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS TotalSales
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY st.Name
+                    ORDER BY TotalSales DESC
+                """, params)
+                territory_sales = dictfetchall(cursor)
+
+            # 7. Sales Customer Directory (Sales Performance)
+            if 'sales_cust_dir_table' in selected_widgets:
+                cursor.execute(f"""
+                    SELECT TOP 25
+                        soh.CustomerID,
+                        ISNULL(st.Name, 'Unknown') AS TerritoryName,
+                        COUNT(soh.SalesOrderID) AS TotalOrders,
+                        CAST(ISNULL(SUM(soh.TotalDue), 0) AS DECIMAL(18, 2)) AS LifetimeSpend
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY soh.CustomerID, st.Name
+                    ORDER BY LifetimeSpend DESC
+                """, params)
+                for r in dictfetchall(cursor):
+                    r['TotalOrdersDisplay'] = number(r['TotalOrders'])
+                    r['LifetimeSpendDisplay'] = money(r['LifetimeSpend'])
+                    sales_customer_directory.append(r)
+
+            # 8. Active Customers by Territory (Customers)
+            if any(w in selected_widgets for w in ('cust_territory_chart', 'cust_territory_table')):
+                cursor.execute(f"""
+                    SELECT
+                        ISNULL(st.Name, 'Unknown') AS TerritoryName,
+                        st.CountryRegionCode,
+                        COUNT(DISTINCT soh.CustomerID) AS ActiveCustomerCount
+                    FROM Sales.SalesOrderHeader soh
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY st.Name, st.CountryRegionCode
+                    ORDER BY ActiveCustomerCount DESC
+                """, params)
+                for r in dictfetchall(cursor):
+                    r['CountryName'] = get_country_name(r.get('CountryRegionCode'))
+                    r['ActiveCustomerCountDisplay'] = number(r['ActiveCustomerCount'])
+                    active_customers.append(r)
+
+            # 9. Customer Directory (Customers)
+            if 'cust_dir_table' in selected_widgets and can_view_customer_details:
+                cursor.execute(f"""
+                    SELECT DISTINCT TOP 25
+                        c.CustomerID,
+                        COALESCE(s.Name, p.FirstName + ' ' + p.LastName, 'Customer #' + CAST(c.CustomerID AS VARCHAR)) AS DisplayName,
+                        ISNULL(pp.PhoneNumber, 'N/A') AS DisplayPhone,
+                        ISNULL(st.Name, 'Unknown') AS TerritoryName
+                    FROM Sales.SalesOrderHeader soh
+                    JOIN Sales.Customer c ON soh.CustomerID = c.CustomerID
+                    LEFT JOIN Sales.Store s ON c.StoreID = s.BusinessEntityID
+                    LEFT JOIN Person.Person p ON c.PersonID = p.BusinessEntityID
+                    LEFT JOIN Person.PersonPhone pp ON p.BusinessEntityID = pp.BusinessEntityID
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    ORDER BY c.CustomerID
+                """, params)
+                customer_directory = dictfetchall(cursor)
+
+            # 10. Revenue and Discount Loss (Revenue & Loss)
+            if any(w in selected_widgets for w in ('rev_loss_chart', 'rev_loss_table')):
+                cursor.execute(f"""
+                    SELECT TOP 15
+                        p.Name AS ProductName,
+                        ISNULL(pc.Name, 'Uncategorized') AS CategoryName,
+                        CAST(ISNULL(SUM(sod.LineTotal), 0) AS DECIMAL(18, 2)) AS NetRevenue,
+                        CAST(ISNULL(SUM(sod.OrderQty * sod.UnitPrice * sod.UnitPriceDiscount), 0) AS DECIMAL(18, 2)) AS DiscountLoss
+                    FROM Sales.SalesOrderDetail sod
+                    JOIN Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    JOIN Production.Product p ON sod.ProductID = p.ProductID
+                    LEFT JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
+                    LEFT JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
+                    WHERE {where_clause}
+                    GROUP BY p.Name, pc.Name
+                    ORDER BY NetRevenue DESC
+                """, params)
+                for r in dictfetchall(cursor):
+                    r['NetRevenueDisplay'] = money(r['NetRevenue'])
+                    r['DiscountLossDisplay'] = money(r['DiscountLoss'])
+                    revenue_data.append(r)
+
+            # 11. Product Cost Comparison & Breakdown (Products)
+            if any(w in selected_widgets for w in ('cost_comp_chart', 'cost_breakdown_table')):
+                cursor.execute("""
+                    SELECT TOP 20
+                        p.Name AS ProductName,
+                        p.ProductNumber,
+                        ISNULL(pc.Name, 'Uncategorized') AS CategoryName,
+                        CAST(p.StandardCost AS DECIMAL(18, 2)) AS StandardCost,
+                        CAST(p.ListPrice AS DECIMAL(18, 2)) AS ListPrice,
+                        CAST(p.ListPrice - p.StandardCost AS DECIMAL(18, 2)) AS UnitMargin
+                    FROM Production.Product p
+                    LEFT JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
+                    LEFT JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
+                    WHERE p.ListPrice > 0
+                    ORDER BY UnitMargin DESC
+                """)
+                for r in dictfetchall(cursor):
+                    r['StandardCostDisplay'] = money(r['StandardCost'])
+                    r['ListPriceDisplay'] = money(r['ListPrice'])
+                    r['UnitMarginDisplay'] = money(r['UnitMargin'])
+                    cost_data.append(r)
+
+            # 12. Collective Category Performance & Product Count by Category (Products)
+            if any(w in selected_widgets for w in ('cost_cat_perf_chart', 'cost_cat_count_chart')):
+                cursor.execute(f"""
+                    SELECT
+                        ISNULL(pc.Name, 'Uncategorized') AS CategoryName,
+                        CAST(ISNULL(SUM(sod.LineTotal), 0) AS DECIMAL(18, 2)) AS TotalRevenue,
+                        COUNT(DISTINCT p.ProductID) AS ProductCount
+                    FROM Production.Product p
+                    LEFT JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
+                    LEFT JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
+                    LEFT JOIN Sales.SalesOrderDetail sod ON p.ProductID = sod.ProductID
+                    LEFT JOIN Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
+                    LEFT JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID
+                    WHERE {where_clause}
+                    GROUP BY pc.Name
+                    ORDER BY TotalRevenue DESC
+                """, params)
+                accessory_data = dictfetchall(cursor)
+
+    except Exception as e:
+        ctx['db_warning'] = str(e)
+
+    ctx.update({
+        'saved_reports': saved_reports,
+        'active_report': active_report,
+        'preview_title': preview_title,
+        'available_widgets': permitted_widgets,
+        'selected_widgets': selected_widgets,
+        'available_years': available_years,
+        'countries': countries,
+        'selected_years': selected_years,
+        'selected_countries': selected_countries,
+        'selected_years_label': selected_years_label(selected_years),
+        'selected_countries_label': selected_countries_label(selected_countries),
+        'can_edit_active_view': can_edit_active_view,
+        'can_edit_active_note': can_edit_active_note,
+        'can_delete_active': can_delete_active,
+        'can_view_customer_details': can_view_customer_details,
+
+        # Dashboard data
+        'kpi': kpi,
+        'revenue_by_country': revenue_by_country,
+        'top_territories': top_territories,
+        'dash_country_labels': json.dumps([r['CountryName'] for r in revenue_by_country]),
+        'dash_country_values': json.dumps([float(r['TotalRevenue']) for r in revenue_by_country]),
+        'dash_year_labels': json.dumps([str(r['SalesYear']) for r in revenue_by_year]),
+        'dash_year_values': json.dumps([float(r['TotalRevenue']) for r in revenue_by_year]),
+
+        # Sales Performance data
+        'sales_trends': sales_trends,
+        'sales_customer_directory': sales_customer_directory,
+        'sales_trend_labels': json.dumps([f"{r['SalesYear']}-{int(r['SalesMonth']):02d}" for r in sales_trends]),
+        'sales_trend_values': json.dumps([float(r['TotalSales']) for r in sales_trends]),
+        'sales_territory_labels': json.dumps([r['TerritoryName'] for r in territory_sales]),
+        'sales_territory_values': json.dumps([float(r['TotalSales']) for r in territory_sales]),
+
+        # Customers data
+        'active_customers': active_customers,
+        'customer_directory': customer_directory,
+        'cust_territory_labels': json.dumps([r['TerritoryName'] for r in active_customers]),
+        'cust_territory_values': json.dumps([int(r['ActiveCustomerCount']) for r in active_customers]),
+
+        # Revenue & Loss data
+        'revenue_data': revenue_data,
+        'rev_labels': json.dumps([r['ProductName'] for r in revenue_data]),
+        'rev_net_values': json.dumps([float(r['NetRevenue']) for r in revenue_data]),
+        'rev_loss_values': json.dumps([float(r['DiscountLoss']) for r in revenue_data]),
+
+        # Products data
+        'cost_data': cost_data,
+        'cost_labels': json.dumps([r['ProductName'] for r in cost_data[:12]]),
+        'cost_values': json.dumps([float(r['StandardCost']) for r in cost_data[:12]]),
+        'price_values': json.dumps([float(r['ListPrice']) for r in cost_data[:12]]),
+        'margin_values': json.dumps([float(r['UnitMargin']) for r in cost_data[:12]]),
+        'cat_labels': json.dumps([r['CategoryName'] for r in accessory_data]),
+        'cat_rev_values': json.dumps([float(r['TotalRevenue']) for r in accessory_data]),
+        'cat_count_values': json.dumps([int(r['ProductCount']) for r in accessory_data]),
+    })
+
+    return render(request, 'reports/custom_reports.html', ctx)
 
 # -------------------------------------------------------------------
 # Governance: RBAC Management
@@ -884,7 +1377,6 @@ def rbac_management(request):
     ctx['manageable_modules'] = ALL_MANAGEABLE_MODULES
 
     return render(request, 'reports/rbac.html', ctx)
-
 
 # -------------------------------------------------------------------
 # Governance: Audit Logs

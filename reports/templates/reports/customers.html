@@ -11,7 +11,10 @@
         </p>
     </div>
 
-    <div class="flex gap-3">
+    <div class="flex gap-3 print:hidden">
+        <button type="button" onclick="openDeptReportModal()" class="rounded-xl bg-slate-800 dark:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-900 dark:hover:bg-slate-600 shadow-sm transition">
+            Create Report
+        </button>
         <a href="{% url 'export_report' 'customers' 'csv' %}" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
             Export CSV
         </a>
@@ -21,11 +24,11 @@
     </div>
 </div>
 
-<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:hidden">
     <form method="GET" class="p-5 flex flex-col xl:flex-row xl:items-end gap-4">
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Year / Years
+                Year
             </label>
 
             <button type="button" onclick="toggleDropdown('yearsDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
@@ -54,7 +57,7 @@
 
         <div class="relative w-full xl:w-64">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Country / Countries
+                Country
             </label>
 
             <button type="button" onclick="toggleDropdown('countriesDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
@@ -127,22 +130,24 @@
     </form>
 </div>
 
-<div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+{% include 'reports/partials/dept_report_modal.html' %}
+
+<div data-report-widget="Active Customers by Territory (Chart)" class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
         <h3 class="text-center md:text-left text-lg font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
             Active Customers by Territory
         </h3>
 
-        <div class="flex items-center gap-2">
-            <label for="customersChartType" class="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                Chart Type
-            </label>
-            <select id="customersChartType" onchange="changeCustomersChartType()" class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-sm text-slate-700 dark:text-slate-200">
-                <option value="bar">Bar</option>
-                <option value="line">Line</option>
-                <option value="doughnut">Doughnut</option>
-                <option value="polarArea">Polar Area</option>
-            </select>
+        <div class="flex justify-end mb-4 print:hidden">
+            <div class="relative w-44">
+                <select id="customersChartType" onchange="changeCustomersChartType()" class="w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-4 pr-9 py-2 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition cursor-pointer">
+                    <option value="bar">Bar</option>
+                    <option value="line">Line</option>
+                    <option value="doughnut">Doughnut</option>
+                    <option value="polarArea">Polar Area</option>
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">▾</span>
+            </div>
         </div>
     </div>
 
@@ -152,7 +157,7 @@
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div data-report-widget="Active Customers by Territory (Table)" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
             <h3 class="text-lg font-bold text-slate-950 dark:text-white">
                 Active Customers by Territory
@@ -188,7 +193,7 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div data-report-widget="Customer Directory (Table)" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
             <h3 class="text-lg font-bold text-slate-950 dark:text-white">
                 Customer Directory

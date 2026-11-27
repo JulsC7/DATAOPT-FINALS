@@ -12,6 +12,7 @@ ALL_MANAGEABLE_MODULES = [
     ('cost', 'Products'),
     ('rbac_management', 'RBAC Management'),
     ('audit_logs', 'Audit Logs'),
+    ('custom_reports', 'Custom Reports')
 ]
 
 
@@ -56,6 +57,7 @@ Role_Permission = {
             'rbac_audit',
             'rbac_management',
             'audit_logs',
+            'custom_reports'
         ],
         'can_export': True,
         'can_manage_users': True,
@@ -319,6 +321,9 @@ def get_user_context(request, active_page=''):
         'can_view_audit': can_view_audit,
         'can_view_rbac': can_view_rbac,
         'can_edit_rbac': policy['can_edit_rbac'],
+        'can_manage_views': policy.get('can_manage_views', False),
+        'can_share_views': policy.get('can_share_views', False),
+        'can_manage_notes': policy.get('can_manage_notes', False),
         'aggregated_only': policy['aggregated_only'],
         'active_page': active_page,
     }

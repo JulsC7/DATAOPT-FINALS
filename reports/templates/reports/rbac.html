@@ -3,6 +3,19 @@
 {% block breadcrumb %}Governance / RBAC{% endblock %}
 
 {% block content %}
+<div id="rbacToast" class="hidden fixed top-5 right-5 z-[70] max-w-sm w-full rounded-2xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-4 flex items-start gap-3 transition-all">
+    <div class="flex-shrink-0 h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold text-sm">
+        ✓
+    </div>
+    <div class="flex-1">
+        <p id="rbacToastTitle" class="text-sm font-bold text-slate-950 dark:text-white">Success</p>
+        <p id="rbacToastMessage" class="mt-0.5 text-xs text-slate-600 dark:text-slate-300"></p>
+    </div>
+    <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold">
+        ✕
+    </button>
+</div>
+
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
     <div>
         <h1 class="text-3xl font-bold text-slate-950 dark:text-white">
@@ -25,7 +38,7 @@
         </p>
     </div>
 
-    <form method="POST" class="p-6 grid grid-cols-1 xl:grid-cols-5 gap-4">
+    <form method="POST" onsubmit="queueSuccessToast('Account Created', 'New user account has been successfully added.')" class="p-6 grid grid-cols-1 xl:grid-cols-5 gap-4">
         {% csrf_token %}
         <input type="hidden" name="action_type" value="create">
 
@@ -54,23 +67,43 @@
                 class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
 
-        <div>
-            <label for="new_role" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+        <div class="relative w-full">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Role
             </label>
-            <select
+            <input
+                type="hidden"
                 id="new_role"
                 name="role"
-                class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {% for role_key, role_info in role_matrix.items %}
-                    <option value="{{ role_key }}">
+                value="{% for role_key, role_info in role_matrix.items %}{% if forloop.first %}{{ role_key }}{% endif %}{% endfor %}">
+
+            <button
+                type="button"
+                onclick="toggleDropdown('newRoleDropdown')"
+                class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                <span id="new_role_label" class="truncate">
+                    {% for role_key, role_info in role_matrix.items %}{% if forloop.first %}{{ role_info.title }}{% endif %}{% empty %}Select role{% endfor %}
+                </span>
+                <span class="text-slate-400 ml-2">▾</span>
+            </button>
+
+            <div
+                id="newRoleDropdown"
+                class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                <div class="p-1.5 space-y-1">
+                    {% for role_key, role_info in role_matrix.items %}
+                    <button
+                        type="button"
+                        onclick="selectSingleOption('new_role', '{{ role_key|escapejs }}', '{{ role_info.title|escapejs }}', 'newRoleDropdown')"
+                        class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                         {{ role_info.title }}
-                    </option>
-                {% endfor %}
-            </select>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
-        <div class="relative">
+        <div class="relative w-full">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Department(s)
             </label>
@@ -79,8 +112,8 @@
                 type="button"
                 onclick="toggleDropdown('newAccountDepartmentsDropdown')"
                 class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                <span class="truncate">Select departments</span>
-                <span class="text-slate-400">▾</span>
+                <span id="newAccountDepartmentsLabel" class="truncate">Select departments</span>
+                <span class="text-slate-400 ml-2">▾</span>
             </button>
 
             <div
@@ -93,6 +126,8 @@
                             type="checkbox"
                             name="departments"
                             value="{{ dept_key }}"
+                            data-label="{{ dept_info.label }}"
+                            onchange="updateMultiSelectLabel('newAccountDepartmentsDropdown', 'newAccountDepartmentsLabel', 'Select departments')"
                             class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span>{{ dept_info.label }}</span>
                     </label>
@@ -113,13 +148,77 @@
 {% endif %}
 
 <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
-    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
-        <h2 class="text-lg font-bold text-slate-950 dark:text-white">
-            User Role Assignments
-        </h2>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Manage existing account roles, passwords, and department access.
-        </p>
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-bold text-slate-950 dark:text-white">
+                User Role Assignments
+            </h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Manage existing account roles, passwords, and department access.
+            </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div class="relative min-w-52">
+                <button
+                    type="button"
+                    onclick="toggleDropdown('deptFilterDropdown')"
+                    class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span id="deptFilterLabel" class="truncate">Department: All</span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div
+                    id="deptFilterDropdown"
+                    class="hidden absolute right-0 z-50 mt-2 w-60 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                    <div class="p-1.5 space-y-1">
+                        <button
+                            type="button"
+                            onclick="setDepartmentFilter('all', 'Department: All')"
+                            class="w-full text-left rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            All
+                        </button>
+                        {% for dept_key, dept_info in departments.items %}
+                        <button
+                            type="button"
+                            onclick="setDepartmentFilter('{{ dept_key|escapejs }}', 'Department: {{ dept_info.label|escapejs }}')"
+                            class="w-full text-left rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            {{ dept_info.label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative min-w-48">
+                <button
+                    type="button"
+                    onclick="toggleDropdown('sortOrderDropdown')"
+                    class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span id="sortOrderLabel" class="truncate">Order: Default</span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div
+                    id="sortOrderDropdown"
+                    class="hidden absolute right-0 z-50 mt-2 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl overflow-hidden">
+                    <div class="p-1.5 space-y-1">
+                        <button
+                            type="button"
+                            onclick="setSortOrder('default', 'Order: Default')"
+                            class="w-full text-left rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Default
+                        </button>
+                        <button
+                            type="button"
+                            onclick="setSortOrder('recent', 'Order: Recently Added')"
+                            class="w-full text-left rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Recently Added
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="overflow-x-auto">
@@ -134,9 +233,13 @@
                 </tr>
             </thead>
 
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            <tbody id="userAssignmentsBody" class="divide-y divide-slate-200 dark:divide-slate-700">
                 {% for account in user_accounts %}
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <tr
+                    class="user-assignment-row hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    data-default-index="{{ forloop.counter0 }}"
+                    data-account-id="{{ account.id|default:forloop.counter }}"
+                    data-departments="{{ account.department_list|join:',' }}">
                     <td class="py-4 px-6 font-mono font-semibold text-slate-900 dark:text-slate-100">
                         {{ account.username }}
                     </td>
@@ -153,61 +256,15 @@
 
                     <td class="py-4 px-6">
                         {% if can_edit_rbac %}
-                        <form method="POST" class="flex flex-col 2xl:flex-row gap-2">
-                            {% csrf_token %}
-                            <input type="hidden" name="action_type" value="update">
-                            <input type="hidden" name="username" value="{{ account.username }}">
-
-                            <input
-                                name="password"
-                                type="password"
-                                placeholder="New password optional"
-                                class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-
-                            <select
-                                name="role"
-                                class="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                {% for role_key, role_info in role_matrix.items %}
-                                    <option value="{{ role_key }}" {% if account.role == role_key %}selected{% endif %}>
-                                        {{ role_info.title }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-
-                            <div class="relative min-w-56">
-                                <button
-                                    type="button"
-                                    onclick="toggleDropdown('departmentsDropdown{{ account.id }}')"
-                                    class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
-                                    <span class="truncate">{{ account.department_display }}</span>
-                                    <span class="text-slate-400">▾</span>
-                                </button>
-
-                                <div
-                                    id="departmentsDropdown{{ account.id }}"
-                                    class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
-                                    <div class="p-2 space-y-1">
-                                        {% for dept_key, dept_info in departments.items %}
-                                        <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                name="departments"
-                                                value="{{ dept_key }}"
-                                                {% if dept_key in account.department_list %}checked{% endif %}
-                                                class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                            <span>{{ dept_info.label }}</span>
-                                        </label>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                class="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition">
-                                Save
-                            </button>
-                        </form>
+                        <button
+                            type="button"
+                            data-username="{{ account.username }}"
+                            data-role="{{ account.role }}"
+                            data-departments="{{ account.department_list|join:',' }}"
+                            onclick="openEditAccountModal(this)"
+                            class="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition">
+                            Edit
+                        </button>
                         {% else %}
                             <span class="text-slate-400">Read-only</span>
                         {% endif %}
@@ -215,13 +272,14 @@
 
                     <td class="py-4 px-6">
                         {% if can_edit_rbac and account.username != 'admin' %}
-                        <form method="POST" onsubmit="return confirm('Delete this account?');">
+                        <form id="deleteForm_{{ account.id|default:forloop.counter }}" method="POST" class="inline">
                             {% csrf_token %}
                             <input type="hidden" name="action_type" value="delete">
                             <input type="hidden" name="username" value="{{ account.username }}">
                             <button
-                                type="submit"
-                                class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition">
+                                type="button"
+                                onclick="confirmDeleteAccount('deleteForm_{{ account.id|default:forloop.counter }}', '{{ account.username|escapejs }}')"
+                                class="rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition">
                                 Delete
                             </button>
                         </form>
@@ -237,6 +295,11 @@
                     </td>
                 </tr>
                 {% endfor %}
+                <tr id="noFilteredUsersRow" class="hidden">
+                    <td colspan="5" class="py-6 px-6 text-center text-slate-500">
+                        No user accounts match the selected department filter.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -301,7 +364,7 @@
                     </td>
                     <td class="py-3 px-6">
                         {% if can_edit_rbac and key != 'Administrator' %}
-                        <form method="POST" class="space-y-2">
+                        <form method="POST" onsubmit="queueSuccessToast('Page Access Saved', 'Updated module permissions for {{ info.title|escapejs }}.')" class="space-y-2">
                             {% csrf_token %}
                             <input type="hidden" name="action_type" value="update_role_modules">
                             <input type="hidden" name="role_name" value="{{ key }}">
@@ -345,7 +408,153 @@
     </div>
 </div>
 
+<div id="editAccountModal" class="!mt-0 hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+    <div class="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-visible">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-slate-950 dark:text-white">Edit User Assignment</h3>
+                <p id="editModalSubtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"></p>
+            </div>
+            <button type="button" onclick="closeEditAccountModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-base font-bold">
+                ✕
+            </button>
+        </div>
+
+        <form id="editAccountForm" method="POST" class="p-6 space-y-5">
+            {% csrf_token %}
+            <input type="hidden" name="action_type" value="update">
+            <input type="hidden" id="edit_username" name="username" value="">
+
+            <div>
+                <label for="edit_password" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    New Password (Optional)
+                </label>
+                <input
+                    id="edit_password"
+                    name="password"
+                    type="password"
+                    placeholder="Leave blank to keep current password"
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="relative w-full">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Role
+                </label>
+                <input type="hidden" id="edit_role" name="role" value="">
+
+                <button
+                    type="button"
+                    onclick="toggleDropdown('editRoleDropdown')"
+                    class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span id="edit_role_label" class="truncate">Select role</span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div
+                    id="editRoleDropdown"
+                    class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-56 overflow-y-auto">
+                    <div class="p-1.5 space-y-1">
+                        {% for role_key, role_info in role_matrix.items %}
+                        <button
+                            type="button"
+                            data-role-key="{{ role_key }}"
+                            data-role-title="{{ role_info.title }}"
+                            onclick="selectSingleOption('edit_role', '{{ role_key|escapejs }}', '{{ role_info.title|escapejs }}', 'editRoleDropdown')"
+                            class="edit-role-option w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            {{ role_info.title }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department(s) Dropdown: opens UPWARD (bottom-full mb-2) so it never clips at the bottom of the screen -->
+            <div class="relative w-full">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                    Department(s)
+                </label>
+
+                <button
+                    type="button"
+                    onclick="toggleDropdown('editDepartmentsDropdown')"
+                    class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">
+                    <span id="editDepartmentsLabel" class="truncate">Select departments</span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div
+                    id="editDepartmentsDropdown"
+                    class="hidden absolute bottom-full mb-2 z-50 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-52 overflow-y-auto">
+                    <div class="p-2 space-y-1">
+                        {% for dept_key, dept_info in departments.items %}
+                        <label class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="departments"
+                                value="{{ dept_key }}"
+                                data-label="{{ dept_info.label }}"
+                                onchange="updateMultiSelectLabel('editDepartmentsDropdown', 'editDepartmentsLabel', 'Select departments')"
+                                class="edit-dept-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span>{{ dept_info.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
+                <button
+                    type="button"
+                    onclick="closeEditAccountModal()"
+                    class="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    onclick="confirmSaveEditAccount()"
+                    class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="confirmActionModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
+        <div class="flex items-start gap-3">
+            <div id="confirmModalIcon" class="flex-shrink-0 h-10 w-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-lg">
+                ?
+            </div>
+            <div>
+                <h3 id="confirmModalTitle" class="text-base font-bold text-slate-950 dark:text-white">Confirm Action</h3>
+                <p id="confirmModalMessage" class="mt-1 text-sm text-slate-600 dark:text-slate-300"></p>
+            </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-3">
+            <button
+                type="button"
+                onclick="closeConfirmModal()"
+                class="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                Cancel
+            </button>
+            <button
+                type="button"
+                id="confirmModalProceedBtn"
+                class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                Yes, Continue
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let activeDeptFilter = 'all';
+    let activeSortOrder = 'default';
+    let pendingConfirmCallback = null;
+
     function toggleDropdown(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
 
@@ -358,6 +567,26 @@
         dropdown.classList.toggle('hidden');
     }
 
+    function selectSingleOption(inputId, value, labelText, dropdownId) {
+        document.getElementById(inputId).value = value;
+        document.getElementById(inputId + '_label').textContent = labelText;
+        document.getElementById(dropdownId).classList.add('hidden');
+    }
+
+    function updateMultiSelectLabel(dropdownId, labelId, placeholderText) {
+        const container = document.getElementById(dropdownId);
+        const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'));
+        const labelEl = document.getElementById(labelId);
+
+        if (checked.length === 0) {
+            labelEl.textContent = placeholderText;
+        } else if (checked.length <= 2) {
+            labelEl.textContent = checked.map(cb => cb.getAttribute('data-label') || cb.value).join(', ');
+        } else {
+            labelEl.textContent = checked.length + ' departments selected';
+        }
+    }
+
     document.addEventListener('click', function(event) {
         const clickedInsideDropdown = event.target.closest('[id$="Dropdown"]');
         const clickedDropdownButton = event.target.closest('button[onclick^="toggleDropdown"]');
@@ -366,6 +595,170 @@
             document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
                 menu.classList.add('hidden');
             });
+        }
+    });
+
+    function setDepartmentFilter(deptKey, labelText) {
+        activeDeptFilter = deptKey;
+        document.getElementById('deptFilterLabel').textContent = labelText;
+        document.getElementById('deptFilterDropdown').classList.add('hidden');
+        applyUserTableFilterAndSort();
+    }
+
+    function setSortOrder(orderKey, labelText) {
+        activeSortOrder = orderKey;
+        document.getElementById('sortOrderLabel').textContent = labelText;
+        document.getElementById('sortOrderDropdown').classList.add('hidden');
+        applyUserTableFilterAndSort();
+    }
+
+    function applyUserTableFilterAndSort() {
+        const tbody = document.getElementById('userAssignmentsBody');
+        const rows = Array.from(tbody.querySelectorAll('tr.user-assignment-row'));
+        const noMatchRow = document.getElementById('noFilteredUsersRow');
+
+        rows.sort(function(a, b) {
+            if (activeSortOrder === 'recent') {
+                return Number(b.dataset.accountId) - Number(a.dataset.accountId);
+            }
+            return Number(a.dataset.defaultIndex) - Number(b.dataset.defaultIndex);
+        });
+
+        let visibleCount = 0;
+        rows.forEach(function(row) {
+            const depts = (row.dataset.departments || '').split(',').filter(Boolean);
+            const matches = activeDeptFilter === 'all' || depts.includes(activeDeptFilter);
+
+            row.classList.toggle('hidden', !matches);
+            if (matches) visibleCount++;
+            tbody.appendChild(row);
+        });
+
+        if (noMatchRow) {
+            tbody.appendChild(noMatchRow);
+            noMatchRow.classList.toggle('hidden', visibleCount > 0 || rows.length === 0);
+        }
+    }
+
+    function openEditAccountModal(buttonEl) {
+        const username = buttonEl.dataset.username;
+        const roleKey = buttonEl.dataset.role;
+        const userDepts = (buttonEl.dataset.departments || '').split(',').filter(Boolean);
+
+        document.getElementById('edit_username').value = username;
+        document.getElementById('edit_password').value = '';
+        document.getElementById('editModalSubtitle').textContent = 'Updating account: ' + username;
+
+        document.getElementById('edit_role').value = roleKey;
+        const matchingRoleBtn = document.querySelector('.edit-role-option[data-role-key="' + roleKey + '"]');
+        document.getElementById('edit_role_label').textContent = matchingRoleBtn ? matchingRoleBtn.dataset.roleTitle : roleKey;
+
+        document.querySelectorAll('.edit-dept-checkbox').forEach(function(cb) {
+            cb.checked = userDepts.includes(cb.value);
+        });
+        updateMultiSelectLabel('editDepartmentsDropdown', 'editDepartmentsLabel', 'Select departments');
+
+        document.getElementById('editAccountModal').classList.remove('hidden');
+    }
+
+    function closeEditAccountModal() {
+        document.getElementById('editAccountModal').classList.add('hidden');
+        document.getElementById('editRoleDropdown').classList.add('hidden');
+        document.getElementById('editDepartmentsDropdown').classList.add('hidden');
+    }
+
+    function openConfirmModal(options) {
+        document.getElementById('confirmModalTitle').textContent = options.title;
+        document.getElementById('confirmModalMessage').textContent = options.message;
+
+        const iconEl = document.getElementById('confirmModalIcon');
+        const proceedBtn = document.getElementById('confirmModalProceedBtn');
+
+        if (options.variant === 'danger') {
+            iconEl.className = 'flex-shrink-0 h-10 w-10 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-300 flex items-center justify-center font-bold text-lg';
+            iconEl.textContent = '!';
+            proceedBtn.className = 'rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition';
+            proceedBtn.textContent = options.confirmText || 'Yes, Delete';
+        } else {
+            iconEl.className = 'flex-shrink-0 h-10 w-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-lg';
+            iconEl.textContent = '?';
+            proceedBtn.className = 'rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition';
+            proceedBtn.textContent = options.confirmText || 'Yes, Save';
+        }
+
+        pendingConfirmCallback = options.onConfirm;
+        document.getElementById('confirmActionModal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmActionModal').classList.add('hidden');
+        pendingConfirmCallback = null;
+    }
+
+    document.getElementById('confirmModalProceedBtn').addEventListener('click', function() {
+        if (typeof pendingConfirmCallback === 'function') {
+            const callback = pendingConfirmCallback;
+            closeConfirmModal();
+            callback();
+        }
+    });
+
+    function confirmSaveEditAccount() {
+        const username = document.getElementById('edit_username').value;
+        openConfirmModal({
+            title: 'Save Account Changes?',
+            message: 'Are you sure you want to save the updated role, password, or department assignments for "' + username + '"?',
+            variant: 'primary',
+            confirmText: 'Yes, Save Changes',
+            onConfirm: function() {
+                queueSuccessToast('Account Updated', 'Changes for "' + username + '" have been saved.');
+                document.getElementById('editAccountForm').submit();
+            }
+        });
+    }
+
+    function confirmDeleteAccount(formId, username) {
+        openConfirmModal({
+            title: 'Delete User Account?',
+            message: 'Are you sure you want to permanently delete "' + username + '"? This action cannot be undone.',
+            variant: 'danger',
+            confirmText: 'Yes, Delete User',
+            onConfirm: function() {
+                queueSuccessToast('Account Deleted', 'User account "' + username + '" was successfully deleted.');
+                document.getElementById(formId).submit();
+            }
+        });
+    }
+
+    function queueSuccessToast(title, message) {
+        sessionStorage.setItem('rbac_toast', JSON.stringify({ title: title, message: message }));
+    }
+
+    function showToast(title, message) {
+        document.getElementById('rbacToastTitle').textContent = title;
+        document.getElementById('rbacToastMessage').textContent = message;
+        document.getElementById('rbacToast').classList.remove('hidden');
+
+        setTimeout(hideToast, 4500);
+    }
+
+    function hideToast() {
+        document.getElementById('rbacToast').classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ['editAccountModal', 'confirmActionModal', 'rbacToast'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) document.body.appendChild(el);
+        });
+
+        const queued = sessionStorage.getItem('rbac_toast');
+        if (queued) {
+            sessionStorage.removeItem('rbac_toast');
+            try {
+                const data = JSON.parse(queued);
+                showToast(data.title, data.message);
+            } catch (e) {}
         }
     });
 </script>

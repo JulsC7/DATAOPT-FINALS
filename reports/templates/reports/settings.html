@@ -32,64 +32,115 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="theme_mode" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <div class="relative w-full">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     Theme Mode
                 </label>
-                <select
-                    id="theme_mode"
-                    name="theme_mode"
-                    onchange="previewSettings()"
-                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
-                    <option value="light" {% if pref_theme_mode == 'light' %}selected{% endif %}>Light Mode</option>
-                    <option value="dark" {% if pref_theme_mode == 'dark' %}selected{% endif %}>Dark Mode</option>
-                    <option value="system" {% if pref_theme_mode == 'system' %}selected{% endif %}>System Default</option>
-                </select>
+                <input type="hidden" id="theme_mode" name="theme_mode" value="{{ pref_theme_mode|default:'system' }}">
+
+                <button type="button" onclick="toggleDropdown('themeModeDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 hover:border-blue-500 transition">
+                    <span id="theme_mode_label" class="truncate">
+                        {% if pref_theme_mode == 'light' %}Light Mode{% elif pref_theme_mode == 'dark' %}Dark Mode{% else %}System Default{% endif %}
+                    </span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div id="themeModeDropdown" class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl max-h-64 overflow-y-auto">
+                    <div class="p-1.5 space-y-1">
+                        <button type="button" onclick="selectSettingOption('theme_mode', 'light', 'Light Mode', 'themeModeDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Light Mode
+                        </button>
+                        <button type="button" onclick="selectSettingOption('theme_mode', 'dark', 'Dark Mode', 'themeModeDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Dark Mode
+                        </button>
+                        <button type="button" onclick="selectSettingOption('theme_mode', 'system', 'System Default', 'themeModeDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            System Default
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <label for="palette" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <div class="relative w-full">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     Accessible Color Palette
                 </label>
-                <select
-                    id="palette"
-                    name="palette"
-                    onchange="previewSettings()"
-                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
-                    <option value="default" {% if pref_palette == 'default' %}selected{% endif %}>Default Blue</option>
-                    <option value="high_contrast" {% if pref_palette == 'high_contrast' %}selected{% endif %}>High-Contrast Accessible</option>
-                    <option value="emerald_teal" {% if pref_palette == 'emerald_teal' %}selected{% endif %}>Emerald / Teal</option>
-                    <option value="colorblind_safe" {% if pref_palette == 'colorblind_safe' %}selected{% endif %}>Colorblind-Safe (Indigo / Amber)</option>
-                </select>
+                <input type="hidden" id="palette" name="palette" value="{{ pref_palette|default:'default' }}">
+
+                <button type="button" onclick="toggleDropdown('paletteDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 hover:border-blue-500 transition">
+                    <span id="palette_label" class="truncate">
+                        {% if pref_palette == 'high_contrast' %}High-Contrast Accessible{% elif pref_palette == 'emerald_teal' %}Emerald / Teal{% elif pref_palette == 'colorblind_safe' %}Colorblind-Safe (Indigo / Amber){% else %}Default Blue{% endif %}
+                    </span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div id="paletteDropdown" class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl overflow-hidden">
+                    <div class="p-1.5 space-y-1">
+                        <button type="button" onclick="selectSettingOption('palette', 'default', 'Default Blue', 'paletteDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Default Blue
+                        </button>
+                        <button type="button" onclick="selectSettingOption('palette', 'high_contrast', 'High-Contrast Accessible', 'paletteDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            High-Contrast Accessible
+                        </button>
+                        <button type="button" onclick="selectSettingOption('palette', 'emerald_teal', 'Emerald / Teal', 'paletteDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Emerald / Teal
+                        </button>
+                        <button type="button" onclick="selectSettingOption('palette', 'colorblind_safe', 'Colorblind-Safe (Indigo / Amber)', 'paletteDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Colorblind-Safe (Indigo / Amber)
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="kpi_format" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <div class="relative w-full">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     Dashboard KPI Number Format
                 </label>
-                <select
-                    id="kpi_format"
-                    name="kpi_format"
-                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
-                    <option value="compact" {% if pref_kpi_format == 'compact' %}selected{% endif %}>Compact (e.g., 123.2M, 31.5K)</option>
-                    <option value="full" {% if pref_kpi_format == 'full' %}selected{% endif %}>Full Numbers</option>
-                </select>
+                <input type="hidden" id="kpi_format" name="kpi_format" value="{{ pref_kpi_format|default:'compact' }}">
+
+                <button type="button" onclick="toggleDropdown('kpiFormatDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 hover:border-blue-500 transition">
+                    <span id="kpi_format_label" class="truncate">
+                        {% if pref_kpi_format == 'full' %}Full Numbers{% else %}Compact (e.g., 123.2M, 31.5K){% endif %}
+                    </span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div id="kpiFormatDropdown" class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl overflow-hidden">
+                    <div class="p-1.5 space-y-1">
+                        <button type="button" onclick="selectSettingOption('kpi_format', 'compact', 'Compact (e.g., 123.2M, 31.5K)', 'kpiFormatDropdown', false)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Compact (e.g., 123.2M, 31.5K)
+                        </button>
+                        <button type="button" onclick="selectSettingOption('kpi_format', 'full', 'Full Numbers', 'kpiFormatDropdown', false)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Full Numbers
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <label for="table_density" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <div class="relative w-full">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     Table Row Density
                 </label>
-                <select
-                    id="table_density"
-                    name="table_density"
-                    onchange="previewSettings()"
-                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100">
-                    <option value="comfortable" {% if pref_table_density == 'comfortable' %}selected{% endif %}>Comfortable</option>
-                    <option value="compact" {% if pref_table_density == 'compact' %}selected{% endif %}>Compact</option>
-                </select>
+                <input type="hidden" id="table_density" name="table_density" value="{{ pref_table_density|default:'comfortable' }}">
+
+                <button type="button" onclick="toggleDropdown('tableDensityDropdown')" class="w-full flex items-center justify-between rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 hover:border-blue-500 transition">
+                    <span id="table_density_label" class="truncate">
+                        {% if pref_table_density == 'compact' %}Compact{% else %}Comfortable{% endif %}
+                    </span>
+                    <span class="text-slate-400 ml-2">▾</span>
+                </button>
+
+                <div id="tableDensityDropdown" class="hidden absolute z-50 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-xl overflow-hidden">
+                    <div class="p-1.5 space-y-1">
+                        <button type="button" onclick="selectSettingOption('table_density', 'comfortable', 'Comfortable', 'tableDensityDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Comfortable
+                        </button>
+                        <button type="button" onclick="selectSettingOption('table_density', 'compact', 'Compact', 'tableDensityDropdown', true)" class="w-full text-left rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            Compact
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -102,6 +153,39 @@
 </form>
 
 <script>
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+
+        document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+            if (menu.id !== dropdownId) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        dropdown.classList.toggle('hidden');
+    }
+
+    function selectSettingOption(fieldId, value, labelText, dropdownId, shouldPreview) {
+        document.getElementById(fieldId).value = value;
+        document.getElementById(fieldId + '_label').textContent = labelText;
+        document.getElementById(dropdownId).classList.add('hidden');
+
+        if (shouldPreview) {
+            previewSettings();
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        const clickedInsideDropdown = event.target.closest('[id$="Dropdown"]');
+        const clickedDropdownButton = event.target.closest('button[onclick^="toggleDropdown"]');
+
+        if (!clickedInsideDropdown && !clickedDropdownButton) {
+            document.querySelectorAll('[id$="Dropdown"]').forEach(function(menu) {
+                menu.classList.add('hidden');
+            });
+        }
+    });
+
     function previewSettings() {
         const mode = document.getElementById('theme_mode').value;
         const palette = document.getElementById('palette').value;
